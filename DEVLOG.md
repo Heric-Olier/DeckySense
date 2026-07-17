@@ -8,6 +8,99 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-07-17 — Phase 0 hardware validation: findings
+
+Validation ran on a real Lenovo Legion Go S over SSH. Probe scripts
+`scripts/probe{,2,3}.sh` capture the raw evidence; archived under
+`docs/phase0/`.
+
+**Setup**
+
+- SteamOS 3.8.23 (BUILD 20260715.2), kernel
+  `6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e`
+  (Valve neptune base — same codebase as the Steam Deck).
+- `VARIANT_ID=steamdeck` in `/etc/os-release`: Valve ships the Go S
+  SteamOS as a `steamdeck` variant overlay, not a separate codename.
+
+**Items confirmed**
+
+1. **Kernel + driver.** `hid_lenovo_go_s` ships with this SteamOS
+   kernel — already loaded at boot, no need for a 7.x kernel. Two
+   modules present on disk: `hid-lenovo-go.ko` (original Legion Go)
+   and `hid-lenovo-go-s.ko` (Go S). Author: Derek J. Clark, GPL.
+   The SDD assumption that this driver was pending mainline in
+   Linux 7.1+ is outdated: it is already backported here.
+2. **Gamepad topology.** The internal MCU presents as a compound USB
+   device `1a86:e310` (QinHeng bridge) with **6 HID interfaces**,
+   each backed by one hidraw device. InputPlumber maps them by
+   `interface_num` (see `/usr/share/inputplumber/devices/50-legion_go_s.yaml`):
+   - iface 2 → `/dev/hidraw1` (mouse + touchpad, blocked)
+   - iface 5 → `/dev/hidraw4` (IMU)
+   - iface 6 → `/dev/hidraw5` (**gamepad** — buttons, sticks, triggers)
+   - iface 0/3/4 → also bound by `hid-lenovo-go-s` (auxiliary)
+   The gamepad is also exposed as `/dev/input/event2` (joystick
+   `js0`, name `"Legion Go S"`) with FF capabilities
+   (`B: FF=107030000`).
+3. **InputPlumber composite device.** InputPlumber is the input
+   manager on this SteamOS build. It captures the native gamepad and
+   re-emits a **virtual Steam Deck gamepad** ("Valve Steam Deck
+   Controller") via `deck-uhid`, surfaced as `/dev/input/event18`
+   (`"Microsoft X-Box 360 pad 0"`, vendor `28de`). Steam and games
+   see only the virtual device.
+4. **D-Bus rumble API.** The composite device at
+   `/org/shadowblip/InputPlumber/CompositeDevice0` exposes the
+   `org.shadowblip.Output.ForceFeedback` interface:
+   - `Rumble(double value)` — set rumble intensity, 0.0–1.0.
+   - `Stop()` — stop rumble.
+   - `Enabled` (readwrite bool, default true).
+   `OutputCapabilities` confirms `ForceFeedback`,
+   `ForceFeedbackUpload`, `ForceFeedbackErase` are supported. This
+   is the clean integration point for Haptic Studio.
+
+**Items partially confirmed**
+
+5. **Steam Input mediation.** Not directly tested. The gamepad the
+   games see is the virtual `deck-uhid` device, so Steam Input
+   applies its own processing on top of that. Intercepting rumble
+   between Steam and the kernel would require going below
+   InputPlumber — out of scope for the MVP.
+
+**Items still open**
+
+6. **Motor profiling.** Dead-zone, saturation point and latency still
+   need to be measured by driving `Rumble(d)` with a sweep of values
+   and observing the physical response. This requires a write test,
+   pending explicit user confirmation (the only Phase 0 step that is
+   not read-only).
+
+**Architectural decision**
+
+For Haptic Studio on the Legion Go S, the **primary rumble path is
+the InputPlumber D-Bus `ForceFeedback.Rumble(double)` method on
+`CompositeDevice0`**.
+
+- It is the officially supported integration surface.
+- It avoids conflicts with InputPlumber's exclusive ownership of
+  `/dev/hidraw5` and `/dev/input/event2`.
+- The `d` argument is already a 0.0–1.0 float — gain is essentially
+  free.
+- It supports per-effect upload/erase for advanced patterns later.
+
+Going below InputPlumber (writing to `hidraw5` directly) would break
+its input translation. Going above InputPlumber (intercepting Steam
+Input output) is not feasible from a Decky plugin. D-Bus is the
+sweet spot.
+
+What D-Bus does **not** give us directly is per-event gain on rumble
+coming from games — `Rumble()` is fire-and-feel, not a transform on
+the FF stream. Global gain as "set baseline intensity" works;
+"amplify whatever the game sends" is not exposed and would need
+either the CompositeDevice's `InterceptMode` /
+`SetInterceptActivation` methods (worth investigating in Phase 2)
+or a path below the kernel. Filed as Phase 2 stretch.
+
+---
+
 ## 2026-07-17 — Repository, build pipeline, first release
 
 **Done**

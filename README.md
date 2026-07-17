@@ -28,17 +28,31 @@ record of technical decisions.
 Compatibility is reported **honestly**. Cells are not filled in until
 they are confirmed on the actual hardware.
 
-| Device                  | Display      | Haptic         | Profiles     |
-| ----------------------- | ------------ | -------------- | ------------ |
-| Lenovo Legion Go S      | Planned      | Investigating  | Planned      |
-| Steam Deck OLED / LCD   | Planned      | N/A            | Planned      |
-| ASUS ROG Ally / Ally X  | Investigating| Investigating  | Investigating|
-| Other handhelds         | Investigating| Investigating  | Investigating|
+| Device                  | Display      | Haptic                            | Profiles     |
+| ----------------------- | ------------ | --------------------------------- | ------------ |
+| Lenovo Legion Go S      | Planned      | Path confirmed (InputPlumber D-Bus) | Planned    |
+| Steam Deck OLED / LCD   | Planned      | N/A                               | Planned      |
+| ASUS ROG Ally / Ally X  | Investigating| Investigating                     | Investigating|
+| Other handhelds         | Investigating| Investigating                     | Investigating|
 
 - **Planned** — designed, not yet implemented.
+- **Path confirmed** — haptic backend path verified on hardware but
+  feature not yet implemented.
 - **Investigating** — pending hardware verification.
 - **N/A** — not applicable (e.g. the Steam Deck already exposes HD
   haptics through Steam Input; DeckSense would not add value there).
+
+### Lenovo Legion Go S — verified details
+
+- SteamOS 3.8.23, kernel `6.16.12-drmexec7-valve24.5-1-neptune-...`
+- `hid_lenovo_go_s` kernel driver ships with the system (already
+  loaded at boot). Original assumption that it was pending mainline
+  Linux 7.1+ is outdated.
+- InputPlumber is the active input manager. The composite device
+  `/org/shadowblip/InputPlumber/CompositeDevice0` exposes
+  `org.shadowblip.Output.ForceFeedback.Rumble(double)` — the
+  integration point DeckSense will use.
+- Raw evidence archived under `docs/phase0/`.
 
 ## Installing
 

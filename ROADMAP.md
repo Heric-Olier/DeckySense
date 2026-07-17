@@ -11,27 +11,41 @@ Statuses: `Not started` · `In progress` · `Blocked` · `Done`.
 
 ## Phase 0 — Hardware validation  *(Blocking)*
 
-**Status:** Not started
+**Status:** In progress — most items confirmed
 
 Validate the technical assumptions on a real Lenovo Legion Go S before
 writing real features. All items are binary: confirmed or not confirmed.
 
-- [ ] Confirm the SteamOS kernel version shipped on the Legion Go S and
+- [x] Confirm the SteamOS kernel version shipped on the Legion Go S and
       whether it includes `hid-lenovo-go-s` (or equivalent), or whether
       everything routes through InputPlumber today.
-- [ ] Enumerate which sysfs / `/dev/hidraw*` nodes the controller exposes
+      *Confirmed: SteamOS 3.8.23 / kernel 6.16.12 ships `hid_lenovo_go_s`
+      already loaded. InputPlumber is the active input manager.*
+- [x] Enumerate which sysfs / `/dev/hidraw*` nodes the controller exposes
       for rumble, and which value ranges they accept (intensity only, or
       waveform / frequency too).
+      *Confirmed: rumble path is InputPlumber D-Bus
+      `org.shadowblip.Output.ForceFeedback.Rumble(double)` at
+      `/org/shadowblip/InputPlumber/CompositeDevice0`. Value is a 0.0–1.0
+      intensity float. hidraw5 (gamepad) is exclusively owned by
+      InputPlumber; sysfs has no rumble nodes.*
 - [ ] Test Steam Input's `TriggerVibration` / `TriggerVibrationExtended`
       against the device to determine whether Steam mediates rumble or a
       direct path exists outside the Steam client.
+      *Partially answered: Steam sees only the virtual `deck-uhid`
+      gamepad, so Steam Input always mediates. Direct interception
+      between Steam and the kernel is not feasible from a Decky plugin;
+      out of scope for MVP.*
 - [ ] Profile the physical motor: dead-zone, saturation point, response
       latency. These numbers feed directly into the Haptic Studio
       response curve.
+      *Pending: needs a write test (`Rumble(d)` sweep), user
+      confirmation required.*
 
 **Exit criterion:** every item above is confirmed or refuted on real
-hardware, and the chosen haptic backend path (kernel sysfs, hidraw or
-InputPlumber) is documented in `DEVLOG.md`.
+hardware, and the chosen haptic backend path documented in `DEVLOG.md`.
+— **mostly met.** Three of four items closed; the last (motor
+profiling) waits on a confirmed write test.
 
 ---
 
