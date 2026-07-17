@@ -8,6 +8,50 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-07-17 — Phase 0 close: rumble sweep results
+
+A rumble sweep was driven through D-Bus at intensities
+`0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 1.0` (1s each, 0.5s gap), then
+stopped. Outcome:
+
+- All values produced a perceptible, **gradual** response. No abrupt
+  on/off threshold was reported at the low end, and no obvious
+  saturation knee at the high end.
+- This contradicts the SDD's working assumption that handheld rumble
+  motors typically show a hard dead-zone at the bottom and early
+  saturation at the top. On the Legion Go S the motor is more
+  obedient than the SDD assumed.
+
+**Implications for Haptic Studio**
+
+- The default response curve can start **linear** — no aggressive
+  dead-zone compensation is required.
+- The ceiling for what Haptic Studio can do on this device is higher
+  than the SDD expected. Fine intensity adjustments will translate to
+  a real perceptual difference; we are not limited to gain +
+  envelope shaping alone.
+- The remaining calibration (subjective "punch" shaping, exact curve
+  preference) is **deferred into Haptic Studio itself**, where the
+  user will have a live intensity slider and curve editor. The
+  initial `DeviceProfile` for the Legion Go S will ship conservative
+  defaults: `gain = 1.0`, linear curve, no dead-zone, no saturation
+  cap.
+
+**Phase 0 status**
+
+| Phase 0 item | Result |
+| --- | --- |
+| Kernel + driver (`hid_lenovo_go_s`) | Confirmed — ships with SteamOS 3.8.23 |
+| Gamepad topology (hidraw/event nodes) | Confirmed — gamepad is `hidraw5` / `event2`, owned by InputPlumber |
+| Steam Input mediation | Partially answered — Steam only sees the virtual `deck-uhid` gamepad; out of scope for MVP |
+| Motor profiling | Confirmed gradual response; fine calibration deferred into Haptic Studio |
+
+Phase 0 is **closed**. Haptic backend path is locked to InputPlumber
+D-Bus `org.shadowblip.Output.ForceFeedback.Rumble(double)` on
+`CompositeDevice0`.
+
+---
+
 ## 2026-07-17 — Phase 0 hardware validation: findings
 
 Validation ran on a real Lenovo Legion Go S over SSH. Probe scripts

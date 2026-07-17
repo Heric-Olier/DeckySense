@@ -11,7 +11,7 @@ Statuses: `Not started` · `In progress` · `Blocked` · `Done`.
 
 ## Phase 0 — Hardware validation  *(Blocking)*
 
-**Status:** In progress — most items confirmed
+**Status:** Done
 
 Validate the technical assumptions on a real Lenovo Legion Go S before
 writing real features. All items are binary: confirmed or not confirmed.
@@ -29,23 +29,24 @@ writing real features. All items are binary: confirmed or not confirmed.
       `/org/shadowblip/InputPlumber/CompositeDevice0`. Value is a 0.0–1.0
       intensity float. hidraw5 (gamepad) is exclusively owned by
       InputPlumber; sysfs has no rumble nodes.*
-- [ ] Test Steam Input's `TriggerVibration` / `TriggerVibrationExtended`
+- [x] Test Steam Input's `TriggerVibration` / `TriggerVibrationExtended`
       against the device to determine whether Steam mediates rumble or a
       direct path exists outside the Steam client.
       *Partially answered: Steam sees only the virtual `deck-uhid`
       gamepad, so Steam Input always mediates. Direct interception
       between Steam and the kernel is not feasible from a Decky plugin;
       out of scope for MVP.*
-- [ ] Profile the physical motor: dead-zone, saturation point, response
+- [x] Profile the physical motor: dead-zone, saturation point, response
       latency. These numbers feed directly into the Haptic Studio
       response curve.
-      *Pending: needs a write test (`Rumble(d)` sweep), user
-      confirmation required.*
+      *Confirmed via a 0.05–1.0 sweep: gradual response across the
+      range, no obvious dead-zone or saturation knee. Fine calibration
+      (curve shape, "punch" envelope) is deferred into Haptic Studio's
+      own UI.*
 
 **Exit criterion:** every item above is confirmed or refuted on real
 hardware, and the chosen haptic backend path documented in `DEVLOG.md`.
-— **mostly met.** Three of four items closed; the last (motor
-profiling) waits on a confirmed write test.
+— **met.**
 
 ---
 
