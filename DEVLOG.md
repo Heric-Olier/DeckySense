@@ -8,6 +8,76 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-07-17 — v0.0.2: auto-update + tabbed UI shell
+
+First release that ships the auto-update loop end-to-end. With this
+version installed, every future release is offered through the
+plugin UI without manual zip transfers.
+
+**Backend**
+
+- `py_modules/decksense/updater/self_updater.py`:
+  - `check(force)` queries GitHub's `releases/latest` endpoint,
+    session-cached, slug and current version derived from
+    `package.json`. Returns an `UpdateStatus` dataclass; never raises.
+  - `install()` downloads the zip, extracts to a temp dir, finds the
+    staged plugin folder (the one with `plugin.json`), and uses
+    `shutil.copytree(dirs_exist_ok=True)` to overlay it on
+    `DECKY_PLUGIN_DIR`. Settings live in `DECKY_PLUGIN_SETTINGS_DIR`
+    and are not touched.
+  - `restart_loader()` calls `systemctl restart plugin_loader` via
+    `subprocess.Popen` with `start_new_session=True` and
+    `LD_LIBRARY_PATH` stripped from the environment. The strip is
+    non-obvious — without it, Decky's bundled libcrypto leaks into
+    the systemctl subprocess and breaks it. Copied from Panel de
+    Control.
+- `main.py` exposes four async RPCs that wrap the sync functions in
+  `run_in_executor` so the asyncio loop never blocks on network I/O.
+
+**Frontend**
+
+- `src/api.ts` centralises the callables and the `UpdateStatus` /
+  `UpdateState` types.
+- `src/updater/useUpdate.ts` is a hook with module-level session
+  guards (`sessionChecked`) so multiple consumers share state. Auto-
+  checks on first mount.
+- `src/updater/UpdatePanel.tsx` renders the inline "Check for updates"
+  button whose label reflects the current state; opens `UpdateModal`
+  when an update is available.
+- `src/updater/UpdateModal.tsx` shows the release notes (rendered as
+  `<pre>` for now; markdown rendering is a later polish) and the
+  install → restart flow.
+- `src/sections/registry.tsx` is the single source of truth for tabs;
+  `TabBar.tsx` uses `Focusable` so the gamepad can navigate between
+  tabs. The active tab grows and shows its label; inactive tabs are
+  icon-only to stay compact in the narrow QAM width.
+- Four placeholder tabs (Display, Haptic, Profiles, Settings). Settings
+  hosts the UpdatePanel.
+
+**Deferred to v0.0.3**
+
+- L1/R1 shoulder navigation (`SteamClient.Input.RegisterForControllerInputMessages`).
+- `MarqueeText` and `AlertDot` utilities.
+- First lab control (haptic gain slider with live preview is the
+  candidate).
+
+**Pipeline validation**
+
+- CI: passed on push (build + python smoke + artifact upload).
+- Release workflow: triggered by the `v0.0.2` tag, ran for ~24s,
+  published `decksense-v0.0.2.zip` (28 KB) to the GitHub release with
+  auto-generated release notes. The whole "commit → tag → release"
+  loop is now hands-off.
+
+**One manual hop remaining**
+
+The Go S currently runs v0.0.1, which predates the auto-updater. The
+first update to v0.0.2 must be done manually (Decky Loader → Install
+from ZIP URL). From v0.0.2 onward, every future release is reachable
+from inside the plugin.
+
+---
+
 ## 2026-07-17 — Roadmap reshuffle: Phase 4 first, lab second
 
 **Decision:** reorder the execution sequence after Phase 0 close.
