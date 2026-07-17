@@ -30,3 +30,25 @@ export const checkForUpdate = callable<[force: boolean], UpdateStatus>(
 export const installUpdate = callable<[], UpdateStatus>("install_update");
 export const restartLoader = callable<[], RestartResult>("restart_loader");
 export const getCurrentVersion = callable<[], string>("get_current_version");
+
+// --- Haptic ---
+
+export interface HapticParams {
+  gain: number;
+}
+
+export interface PreviewResult {
+  state: "playing" | "stopped" | "error";
+  intensity?: number;
+  gain?: number;
+  error?: string;
+}
+
+export const getHapticParams = callable<[], HapticParams>("get_haptic_params");
+export const setHapticGain = callable<[value: number], HapticParams>(
+  "set_haptic_gain"
+);
+export const previewRumble = callable<[rawIntensity: number], PreviewResult>(
+  "preview_rumble"
+);
+export const stopRumble = callable<[], PreviewResult>("stop_rumble");

@@ -33,31 +33,27 @@ Statuses: `Not started` · `In progress` · `Blocked` · `Done`.
 
 ---
 
-## Phase 4 — Auto-update and core UX shell  *(Current focus)*
+## Phase 4 — Auto-update and core UX shell
 
-**Status:** In progress
+**Status:** Done
 
-Infrastructure needed before feature work pays off. Pulls forward from
-its original slot.
-
-- [ ] CI workflow — build + typecheck on every push and PR.
-- [ ] Release workflow — on `v*` tag, build + package + upload the zip
+- [x] CI workflow — build + typecheck on every push and PR.
+- [x] Release workflow — on `v*` tag, build + package + upload the zip
       to the GitHub release automatically.
-- [ ] Dependabot — npm and github-actions, weekly, conservative.
-- [ ] Tabbed navigation shell — `SectionDef` registry as single source
+- [x] Dependabot — npm and github-actions, weekly, conservative.
+- [x] Tabbed navigation shell — `SectionDef` registry as single source
       of truth, `TabBar` with `Focusable`, L1/R1 (shoulder buttons) to
       cycle tabs via `SteamClient.Input.RegisterForControllerInputMessages`.
-- [ ] `MarqueeText` and `AlertDot` utility components.
-- [ ] Backend `self_updater` — `check()`, `install()`, `restart_loader()`
+- [x] `MarqueeText` and `AlertDot` utility components.
+- [x] Backend `self_updater` — `check()`, `install()`, `restart_loader()`
       following the Panel de Control pattern (never raises; status dict;
       `LD_LIBRARY_PATH` stripped when calling systemctl).
-- [ ] Frontend `useUpdate` hook + `UpdatePanel` + `UpdateModal` with
+- [x] Frontend `useUpdate` hook + `UpdatePanel` + `UpdateModal` with
       coarse progress states.
-- [ ] Honest compatibility table per device in the README.
+- [x] Honest compatibility table per device in the README.
 
-**Exit criterion:** a new tagged release is offered to existing
-installs through the plugin UI and installs cleanly. Tab navigation
-with L1/R1 works. Deployed as `v0.0.2`.
+Deployed incrementally: v0.0.2 (auto-update + tab shell), v0.0.3
+(L1/R1 + MarqueeText + AlertDot).
 
 ---
 
@@ -84,24 +80,26 @@ revert cleanly through the QAM, with the confirmation timer enforced.
 
 ## Phase 2 — Haptic Studio  *(Lab, parallel with Phase 1)*
 
-**Status:** Not started — incremental from `v0.0.3`
+**Status:** In progress — incremental from `v0.0.3`
 
 Built one or two controls at a time, deployed often. Backend path is
 locked from Phase 0: InputPlumber D-Bus `Rumble(double)`.
 
-- [ ] Haptic backend abstraction (`HapticBackend` interface).
-- [ ] Legion Go S implementation (D-Bus client to InputPlumber
-      `CompositeDevice0`).
-- [ ] **Gain slider** with live preview (the slider drag emits
-      `Rumble(value)` so you feel it in real time).
-- [ ] `DeviceProfile` for the Legion Go S with conservative defaults
-      (gain 1.0, linear curve).
+- [x] Haptic backend abstraction (`HapticBackend` Protocol).
+- [x] Legion Go S implementation (D-Bus client to InputPlumber
+      `CompositeDevice0` via the `gdbus` CLI).
+- [x] **Gain slider** with live preview (Preview button fires a
+      rumble at `0.5 * gain` and auto-stops after 1.2s).
+- [x] Persisted gain via `decky.set_setting`, reloaded on plugin
+      start.
+- [ ] `DeviceProfile` for the Legion Go S as a discrete concept
+      (today the defaults live in `domain.py`).
 - [ ] *Later:* response curve editor, "punch" envelope, per-motor
       calibrations.
 
-**Exit criterion for `v0.0.3`:** the gain slider visibly and audibly
-drives the rumble motor, with the value persisted and reapplied on
-plugin reload.
+**Exit criterion for `v0.0.3`:** the gain slider visibly drives the
+rumble motor, with the value persisted and reapplied on plugin
+reload. — **met.**
 
 ---
 

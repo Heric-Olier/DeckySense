@@ -1,20 +1,27 @@
 import { Focusable } from "@decky/ui";
 import type { SectionDef } from "./registry";
+import { MarqueeText } from "../components/MarqueeText";
+import { AlertDot } from "../components/AlertDot";
 
 interface Props {
   sections: SectionDef[];
   active: string;
   onSelect: (id: string) => void;
+  /** Per-tab alert dot visibility, keyed by section id. */
+  alerts?: Record<string, boolean>;
 }
 
 /**
- * Top tab bar. Active tab grows and shows its label; inactive tabs
- * are icon-only to stay compact in the narrow QAM width.
+ * Top tab bar. Active tab grows and shows its label (with marquee
+ * scroll if it overflows); inactive tabs are icon-only with an
+ * optional AlertDot to surface state from any tab.
  *
  * Each tab is a `Focusable` so the gamepad can navigate between them.
  * `onActivate` fires on gamepad activate (A button) and on click.
+ *
+ * L1/R1 shoulder navigation is wired in `index.tsx` via `useShoulderNav`.
  */
-export function TabBar({ sections, active, onSelect }: Props) {
+export function TabBar({ sections, active, onSelect, alerts = {} }: Props) {
   return (
     <Focusable
       style={{
@@ -33,6 +40,7 @@ export function TabBar({ sections, active, onSelect }: Props) {
             style={{
               flex: isActive ? 1 : "0 0 auto",
               minWidth: 0,
+              position: "relative",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -43,10 +51,18 @@ export function TabBar({ sections, active, onSelect }: Props) {
             }}
           >
             <Icon size={18} />
-            {isActive && <span>{s.label}</span>}
+            {isActive && (
+              <MarqueeText
+                text={s.label}
+                style={{ minWidth: 0, flex: 1 }}
+                // MarqueeText forwards `style` if it accepts it.
+              />
+            )}
+            <AlertDot show={!!alerts[s.id]} />
           </Focusable>
         );
       })}
     </Focusable>
   );
 }
+

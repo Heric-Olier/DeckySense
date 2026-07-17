@@ -8,6 +8,85 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-07-17 — v0.0.3: shoulder nav, marquee/alert, gain slider with live preview
+
+Closes Phase 4 (auto-update + core UX shell) and lands the first
+working Haptic Studio control.
+
+**Plugin rename.** Before any of this, the project was renamed
+DeckSense → DeckySense. Convention: `deckysense` (lowercase) for the
+npm package name and the Python package directory; `DeckySense`
+(PascalCase) for the visible plugin name in `plugin.json`, the docs,
+and the GitHub repo (whose REST API does not follow
+case-insensitive redirects, so `GITHUB_REPO` in `self_updater.py`
+must use the actual name).
+
+**UX shell.**
+
+- `src/components/MarqueeText.tsx` — ping-pong scroll that only
+  animates when text overflows its container by more than 2px. Uses
+  the Web Animations API on a single transform property so all the
+  work stays on the compositor thread. Adapted from Panel de
+  Control's pattern.
+- `src/components/AlertDot.tsx` — small coloured badge for tab
+  icons. Wired in `index.tsx` so the Settings tab shows a dot when
+  an update is available, regardless of which tab is active.
+- `src/sections/nav.ts` — pure `cycleTab(ids, active, direction)`
+  with wrap-around, separated from React for unit testing.
+- `src/sections/useShoulderNav.ts` — registers
+  `SteamClient.Input.RegisterForControllerInputMessages` once on
+  mount, filters button ids 30 (L1) and 31 (R1) to cycle tabs via
+  `cycleTab`. Refs keep `ids`/`active`/`onSelect` fresh without
+  re-registering. Degrades silently when the API is missing.
+- `TabBar.tsx` updated to use `MarqueeText` for the active tab label
+  and to render `AlertDot` per tab from an `alerts` prop.
+
+**Haptic backend.**
+
+- `py_modules/deckysense/haptic/domain.py` — `HapticParams` dataclass
+  with conservative defaults for the Legion Go S (gain 1.0, range
+  0.0–2.0).
+- `py_modules/deckysense/haptic/adapters/__init__.py` — `HapticBackend`
+  Protocol (`rumble(double)`, `stop()`) so services stay
+  hardware-agnostic and mockable.
+- `py_modules/deckysense/haptic/adapters/inputplumber_adapter.py` —
+  shelling out to `gdbus call` against
+  `org.shadowblip.Output.ForceFeedback.Rumble(double)` on
+  `CompositeDevice0`. Using the CLI instead of pulling in a D-Bus
+  Python binding keeps the install surface tiny; if a low-latency
+  path is needed later (synthetic patterns, real-time envelope), we
+  can migrate to `dbus-python` or `jeepney` without touching the
+  service layer.
+- `py_modules/deckysense/haptic/services/gain_service.py` — owns the
+  current `HapticParams`, persists gain via `decky.set_setting`, and
+  exposes `preview(raw_intensity)` which fires
+  `min(1.0, raw * gain)` so the user can feel their setting. Module-
+  level singleton via `get_gain_service()`.
+- `main.py` exposes four async RPCs (`get_haptic_params`,
+  `set_haptic_gain`, `preview_rumble`, `stop_rumble`) running the
+  sync service in `run_in_executor`. Loads persisted settings in
+  `_main`.
+
+**Frontend haptic.**
+
+- `src/haptic/GainPanel.tsx` — `SliderField` 0–2 step 0.05 for gain,
+  persisted on change. Preview button fires a rumble at
+  `0.5 * gain` and auto-stops after 1.2s so it can't run forever.
+  Stop button cancels an ongoing rumble immediately. Error state
+  surfaced as small inline text.
+- `src/sections/HapticTab.tsx` mounts `GainPanel`.
+- `src/api.ts` extended with `HapticParams` / `PreviewResult` types
+  and the four callables.
+
+**Deferred to v0.0.4**
+
+- Display Studio MVP: gamescope adapter + Sharp / OLED-like presets
+  + confirmation timer.
+- Haptic Studio response curve editor (start with simple linear
+  remap, no per-game profile yet).
+
+---
+
 ## 2026-07-17 — v0.0.2: auto-update + tabbed UI shell
 
 First release that ships the auto-update loop end-to-end. With this

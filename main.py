@@ -14,6 +14,7 @@ from typing import Any
 
 import decky
 
+from deckysense.haptic.services.gain_service import get_gain_service
 from deckysense.updater import self_updater
 
 
@@ -27,6 +28,7 @@ class Plugin:
         decky.logger.info(
             "DeckySense backend started (v%s)", self_updater.CURRENT_VERSION
         )
+        get_gain_service().load_from_settings()
 
     async def _unload(self) -> None:
         decky.logger.info("DeckySense backend stopping")
@@ -50,3 +52,21 @@ class Plugin:
 
     async def restart_loader(self) -> dict[str, Any]:
         return await self.loop.run_in_executor(None, self_updater.restart_loader)
+
+    # --- RPC: haptic ------------------------------------------------------
+
+    async def get_haptic_params(self) -> dict[str, Any]:
+        return get_gain_service().get_params()
+
+    async def set_haptic_gain(self, value: float) -> dict[str, Any]:
+        return await self.loop.run_in_executor(
+            None, get_gain_service().set_gain, value
+        )
+
+    async def preview_rumble(self, raw_intensity: float = 0.5) -> dict[str, Any]:
+        return await self.loop.run_in_executor(
+            None, get_gain_service().preview, raw_intensity
+        )
+
+    async def stop_rumble(self) -> dict[str, Any]:
+        return await self.loop.run_in_executor(None, get_gain_service().stop)
