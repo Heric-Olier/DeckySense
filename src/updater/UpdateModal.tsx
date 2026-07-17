@@ -16,7 +16,7 @@ export function UpdateModal({ open, onClose }: Props) {
   }, [status.state]);
 
   return (
-    <ModalRoot open={open} onClose={onClose} header="Update DeckSense">
+    <ModalRoot open={open} onClose={onClose} header="Update DeckySense">
       {status.state === "available" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div>A new version is available: v{status.latest_version}</div>

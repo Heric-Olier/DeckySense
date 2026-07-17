@@ -1,4 +1,4 @@
-"""DeckSense self-updater.
+"""DeckySense self-updater.
 
 Pulls new releases from the project's GitHub repo and installs them
 through Decky's plugin loader. Pattern adapted from Panel de Control.
@@ -39,7 +39,7 @@ PLUGIN_NAME: str = _PKG["name"]
 CURRENT_VERSION: str = _PKG.get("version", "0.0.0")
 
 GITHUB_OWNER: str = "Heric-Olier"
-GITHUB_REPO: str = "decksense"
+GITHUB_REPO: str = "deckysense"
 RELEASES_URL: str = (
     f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 )

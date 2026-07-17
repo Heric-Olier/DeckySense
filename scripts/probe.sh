@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# DeckSense Phase 0 hardware probe.
+# DeckySense Phase 0 hardware probe.
 #
 # Read-only inspection of the system to figure out what rumble / haptic
 # access paths are available on this device. Safe to run on the device:
 # it does not write to anything.
 #
 # Usage on the device (desktop mode or SSH):
-#   curl -fsSL https://raw.githubusercontent.com/Heric-Olier/decksense/main/scripts/probe.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Heric-Olier/deckysense/main/scripts/probe.sh | bash
 # or:
 #   bash probe.sh > probe-output.txt 2>&1
 #

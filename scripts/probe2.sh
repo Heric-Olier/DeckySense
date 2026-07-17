@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DeckSense Phase 0 — second-round probe.
+# DeckySense Phase 0 — second-round probe.
 #
 # Identifies which hidraw device is the gamepad, what driver claims it,
 # and what D-Bus interfaces InputPlumber exposes for rumble control.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DeckSense Phase 0 — third probe.
+# DeckySense Phase 0 — third probe.
 # Deep introspection of InputPlumber D-Bus and driver config files.
 # Read-only.
 set -uo pipefail

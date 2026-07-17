@@ -1,8 +1,8 @@
-# DeckSense
+# DeckySense
 
 > Display, haptic and per-game profile studio for PC handhelds on SteamOS.
 
-DeckSense is a [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader)
+DeckySense is a [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader)
 plugin suite that brings display calibration, software-enhanced haptics
 and automatic per-game profiles to PC handhelds. It is being built with
 the **Lenovo Legion Go S** as the reference device, and is designed so
@@ -40,7 +40,7 @@ they are confirmed on the actual hardware.
   feature not yet implemented.
 - **Investigating** — pending hardware verification.
 - **N/A** — not applicable (e.g. the Steam Deck already exposes HD
-  haptics through Steam Input; DeckSense would not add value there).
+  haptics through Steam Input; DeckySense would not add value there).
 
 ### Lenovo Legion Go S — verified details
 
@@ -51,7 +51,7 @@ they are confirmed on the actual hardware.
 - InputPlumber is the active input manager. The composite device
   `/org/shadowblip/InputPlumber/CompositeDevice0` exposes
   `org.shadowblip.Output.ForceFeedback.Rumble(double)` — the
-  integration point DeckSense will use.
+  integration point DeckySense will use.
 - Raw evidence archived under `docs/phase0/`.
 
 ## Installing

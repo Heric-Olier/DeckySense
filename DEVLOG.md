@@ -16,7 +16,7 @@ plugin UI without manual zip transfers.
 
 **Backend**
 
-- `py_modules/decksense/updater/self_updater.py`:
+- `py_modules/deckysense/updater/self_updater.py`:
   - `check(force)` queries GitHub's `releases/latest` endpoint,
     session-cached, slug and current version derived from
     `package.json`. Returns an `UpdateStatus` dataclass; never raises.
@@ -65,7 +65,7 @@ plugin UI without manual zip transfers.
 
 - CI: passed on push (build + python smoke + artifact upload).
 - Release workflow: triggered by the `v0.0.2` tag, ran for ~24s,
-  published `decksense-v0.0.2.zip` (28 KB) to the GitHub release with
+  published `deckysense-v0.0.2.zip` (28 KB) to the GitHub release with
   auto-generated release notes. The whole "commit → tag → release"
   loop is now hands-off.
 
@@ -298,8 +298,8 @@ or a path below the kernel. Filed as Phase 2 stretch.
     No `docker` (no decky CLI) — handled by the manual packaging
     script instead.
 - `pnpm run build` produces `dist/index.js` (~7 KB) plus a sourcemap.
-- Packaged `out/decksense-v0.0.1.zip` (21 entries, ~25 KB).
-- Created the GitHub repository at `Heric-Olier/decksense` as
+- Packaged `out/deckysense-v0.0.1.zip` (21 entries, ~25 KB).
+- Created the GitHub repository at `Heric-Olier/deckysense` as
   **private** until the MVP is ready, and pushed `main`.
 - Tagged `v0.0.1` and published the first GitHub Release with the zip
   as a release asset.
@@ -342,7 +342,7 @@ or a path below the kernel. Filed as Phase 2 stretch.
 - **Plugin runs with the `_root` flag.** Hardware access (sysfs,
   hidraw) requires elevated privileges. The flag is declared in
   `plugin.json` so the user knows up front what the plugin needs.
-- **Module layout under `py_modules/decksense/`** with one subpackage
+- **Module layout under `py_modules/deckysense/`** with one subpackage
   per module (`display`, `haptic`, `profiles`, `updater`). Each
   subpackage will own its own `adapters`, `services` and `domain`
   types. This keeps module boundaries explicit so each module can grow

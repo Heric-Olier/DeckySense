@@ -1,4 +1,4 @@
-"""DeckSense backend entrypoint.
+"""DeckySense backend entrypoint.
 
 Decky Loader instantiates the ``Plugin`` class below once per plugin
 lifecycle and invokes the underscore-prefixed hooks at the right
@@ -14,28 +14,28 @@ from typing import Any
 
 import decky
 
-from decksense.updater import self_updater
+from deckysense.updater import self_updater
 
 
 class Plugin:
-    """Lifecycle handler for the DeckSense backend."""
+    """Lifecycle handler for the DeckySense backend."""
 
     loop: asyncio.AbstractEventLoop
 
     async def _main(self) -> None:
         self.loop = asyncio.get_event_loop()
         decky.logger.info(
-            "DeckSense backend started (v%s)", self_updater.CURRENT_VERSION
+            "DeckySense backend started (v%s)", self_updater.CURRENT_VERSION
         )
 
     async def _unload(self) -> None:
-        decky.logger.info("DeckSense backend stopping")
+        decky.logger.info("DeckySense backend stopping")
 
     async def _uninstall(self) -> None:
-        decky.logger.info("DeckSense uninstalled")
+        decky.logger.info("DeckySense uninstalled")
 
     async def _migration(self) -> None:
-        decky.logger.info("DeckSense migration check (no-op)")
+        decky.logger.info("DeckySense migration check (no-op)")
 
     # --- RPC: updater ----------------------------------------------------
 

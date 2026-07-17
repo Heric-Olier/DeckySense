@@ -1,4 +1,4 @@
-"""DeckSense backend package.
+"""DeckySense backend package.
 
 Subpackages:
 - ``display``   — gamescope filter wrapper (Display Studio).
@@ -9,7 +9,7 @@ Subpackages:
 
 The entrypoint lives in ``main.py`` at the project root; Decky Loader
 adds this directory to ``sys.path`` at runtime so plugins can import
-their own modules as ``from decksense import ...``.
+their own modules as ``from deckysense import ...``.
 """
 
 __version__ = "0.0.1"

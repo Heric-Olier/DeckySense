@@ -20,8 +20,8 @@ function Content() {
 
 export default definePlugin(() => {
   return {
-    name: "DeckSense",
-    titleView: <div className={staticClasses.Title}>DeckSense</div>,
+    name: "DeckySense",
+    titleView: <div className={staticClasses.Title}>DeckySense</div>,
     content: <Content />,
     icon: <FaTachometerAlt />,
     onDismount() {},
