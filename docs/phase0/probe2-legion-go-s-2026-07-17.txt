@@ -1,0 +1,598 @@
+
+===== /proc/bus/input/devices (full) =====
+I: Bus=0019 Vendor=0000 Product=0001 Version=0000
+N: Name="Power Button"
+P: Phys=PNP0C0C/button/input0
+S: Sysfs=/devices/LNXSYSTM:00/LNXSYBUS:00/PNP0C0C:00/input/input0
+U: Uniq=
+H: Handlers=kbd event0 
+B: PROP=0
+B: EV=3
+B: KEY=8000 10000000000000 0
+
+I: Bus=0011 Vendor=0001 Product=0001 Version=ab83
+N: Name="AT Translated Set 2 keyboard"
+P: Phys=isa0060/serio0/input0
+S: Sysfs=/devices/platform/i8042/serio0/input/input1
+U: Uniq=
+H: Handlers=sysrq kbd leds event1 
+B: PROP=0
+B: EV=120013
+B: KEY=402000002 7803078f800d001 feffffdfffefffff fffffffffffffffe
+B: MSC=10
+B: LED=7
+
+I: Bus=0003 Vendor=1a86 Product=e310 Version=0111
+N: Name="wch.cn Legion Go S Mouse"
+P: Phys=usb-0000:c3:00.4-1/input2
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input7
+U: Uniq=BC504746ABCD
+H: Handlers=event3 mouse0 
+B: PROP=0
+B: EV=17
+B: KEY=ff0000 0 0 0 0
+B: REL=1943
+B: MSC=10
+
+I: Bus=0003 Vendor=1a86 Product=e310 Version=0111
+N: Name="wch.cn Legion Go S Keyboard"
+P: Phys=usb-0000:c3:00.4-1/input2
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input8
+U: Uniq=BC504746ABCD
+H: Handlers=kbd event4 
+B: PROP=0
+B: EV=10001f
+B: KEY=3f00033fff 0 0 483ffff17aff32d bfd4444600000000 1 130ff38b17d000 ffe77bfad9415fed 81beffcd01cfffff febffbffdffffffe
+B: REL=1040
+B: ABS=100000000
+B: MSC=10
+
+I: Bus=0003 Vendor=1a86 Product=e310 Version=0111
+N: Name="wch.cn Legion Go S UNKNOWN"
+P: Phys=usb-0000:c3:00.4-1/input2
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input9
+U: Uniq=BC504746ABCD
+H: Handlers=event5 
+B: PROP=0
+B: EV=9
+B: ABS=10000000000
+
+I: Bus=0003 Vendor=1a86 Product=e310 Version=0111
+N: Name="wch.cn Legion Go S Touchpad"
+P: Phys=usb-0000:c3:00.4-1/input2
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input10
+U: Uniq=BC504746ABCD
+H: Handlers=event6 mouse1 
+B: PROP=5
+B: EV=1b
+B: KEY=2420 30000 0 0 0 0
+B: ABS=2e0800000000003
+B: MSC=20
+
+I: Bus=0003 Vendor=1a86 Product=e310 Version=0043
+N: Name="Legion Go S"
+P: Phys=usb-0000:c3:00.4-1/input0
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.1/input/input11
+U: Uniq=
+H: Handlers=event2 js0 
+B: PROP=0
+B: EV=20000b
+B: KEY=7cdb000000000000 0 0 0 0
+B: ABS=3003f
+B: FF=107030000 0
+
+I: Bus=0010 Vendor=001f Product=0001 Version=0100
+N: Name="PC Speaker"
+P: Phys=isa0061/input0
+S: Sysfs=/devices/platform/pcspkr/input/input12
+U: Uniq=
+H: Handlers=kbd event7 
+B: PROP=0
+B: EV=40001
+B: SND=6
+
+I: Bus=0018 Vendor=0603 Product=f200 Version=0100
+N: Name="NVTK0603:00 0603:F200"
+P: Phys=i2c-NVTK0603:00
+S: Sysfs=/devices/platform/AMDI0010:02/i2c-1/i2c-NVTK0603:00/0018:0603:F200.0007/input/input13
+U: Uniq=
+H: Handlers=event8 mouse2 
+B: PROP=2
+B: EV=1b
+B: KEY=400 0 0 0 0 0
+B: ABS=260800000000003
+B: MSC=20
+
+I: Bus=0019 Vendor=0000 Product=0006 Version=0000
+N: Name="Video Bus"
+P: Phys=LNXVIDEO/video/input0
+S: Sysfs=/devices/LNXSYSTM:00/LNXSYBUS:00/PNP0A08:00/device:16/LNXVIDEO:00/input/input14
+U: Uniq=
+H: Handlers=kbd event9 
+B: PROP=0
+B: EV=3
+B: KEY=3e000b00000000 0 0 0
+
+I: Bus=0019 Vendor=0000 Product=0000 Version=0000
+N: Name="Ideapad extra buttons"
+P: Phys=ideapad/input0
+S: Sysfs=/devices/pci0000:00/0000:00:14.3/PNP0C09:00/VPC2004:00/input/input15
+U: Uniq=
+H: Handlers=kbd event10 rfkill 
+B: PROP=0
+B: EV=13
+B: KEY=400040000000000 40000001c0000 0 6000000000000000 100000000000 0 181000800100c00 400000000300600 0 2
+B: MSC=10
+
+I: Bus=0000 Vendor=0000 Product=0000 Version=0000
+N: Name="HD-Audio Generic HDMI/DP,pcm=3"
+P: Phys=ALSA
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input16
+U: Uniq=
+H: Handlers=event11 
+B: PROP=0
+B: EV=21
+B: SW=140
+
+I: Bus=0000 Vendor=0000 Product=0000 Version=0000
+N: Name="HD-Audio Generic HDMI/DP,pcm=7"
+P: Phys=ALSA
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input17
+U: Uniq=
+H: Handlers=event12 
+B: PROP=0
+B: EV=21
+B: SW=140
+
+I: Bus=0000 Vendor=0000 Product=0000 Version=0000
+N: Name="HD-Audio Generic HDMI/DP,pcm=8"
+P: Phys=ALSA
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input18
+U: Uniq=
+H: Handlers=event13 
+B: PROP=0
+B: EV=21
+B: SW=140
+
+I: Bus=0000 Vendor=0000 Product=0000 Version=0000
+N: Name="HD-Audio Generic HDMI/DP,pcm=9"
+P: Phys=ALSA
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input19
+U: Uniq=
+H: Handlers=event14 
+B: PROP=0
+B: EV=21
+B: SW=140
+
+I: Bus=0000 Vendor=0000 Product=0000 Version=0000
+N: Name="HD-Audio Generic Mic"
+P: Phys=ALSA
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.6/sound/card1/input20
+U: Uniq=
+H: Handlers=event15 
+B: PROP=0
+B: EV=21
+B: SW=10
+
+I: Bus=0000 Vendor=0000 Product=0000 Version=0000
+N: Name="HD-Audio Generic Headphone"
+P: Phys=ALSA
+S: Sysfs=/devices/pci0000:00/0000:00:08.1/0000:c3:00.6/sound/card1/input21
+U: Uniq=
+H: Handlers=kbd event16 
+B: PROP=0
+B: EV=23
+B: KEY=40 0 0 0 0 0 0 1000000000 c000000000000 0
+B: SW=4
+
+I: Bus=0006 Vendor=28de Product=0000 Version=0000
+N: Name="steamos-manager"
+P: Phys=
+S: Sysfs=/devices/virtual/input/input22
+U: Uniq=
+H: Handlers=kbd event17 
+B: PROP=0
+B: EV=3
+B: KEY=568000000000 4040860000000
+
+I: Bus=0003 Vendor=28de Product=11ff Version=0001
+N: Name="Microsoft X-Box 360 pad 0"
+P: Phys=
+S: Sysfs=/devices/virtual/input/input23
+U: Uniq=
+H: Handlers=event18 js1 
+B: PROP=0
+B: EV=20000b
+B: KEY=7cdb000000000000 0 0 0 0
+B: ABS=3003f
+B: FF=10000 0
+
+
+===== /sys/bus/hid/drivers (loaded HID drivers and their bound devices) =====
+--- hid-generic ---
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0003:28DE:12FF.0008 -> ../../../../devices/virtual/misc/uhid/0003:28DE:12FF.0008
+--w------- 1 root root 4096 Jul 17 15:20 new_id
+--- hid-lenovo-go-s ---
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0003:1A86:E310.0001 -> ../../../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.0/0003:1A86:E310.0001
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0003:1A86:E310.0003 -> ../../../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.3/0003:1A86:E310.0003
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0003:1A86:E310.0004 -> ../../../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.4/0003:1A86:E310.0004
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0003:1A86:E310.0005 -> ../../../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.5/0003:1A86:E310.0005
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0003:1A86:E310.0006 -> ../../../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.6/0003:1A86:E310.0006
+--w------- 1 root root 4096 Jul 17 15:20 new_id
+--- hid-multitouch ---
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0003:1A86:E310.0002 -> ../../../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0018:0603:F200.0007 -> ../../../../devices/platform/AMDI0010:02/i2c-1/i2c-NVTK0603:00/0018:0603:F200.0007
+--w------- 1 root root 4096 Jul 17 15:20 new_id
+--- hid-sensor-hub ---
+lrwxrwxrwx 1 root root    0 Jul 17 15:20 0020:1022:0001.0009 -> ../../../../devices/0020:1022:0001.0009
+--w------- 1 root root 4096 Jul 17 15:20 new_id
+--- nintendo ---
+--w------- 1 root root 4096 Jul 17 15:20 new_id
+--- playstation ---
+--w------- 1 root root 4096 Jul 17 15:20 new_id
+
+===== /sys/class/input =====
+total 0
+drwxr-xr-x  2 root root 0 Jul 17 15:20 .
+drwxr-xr-x 78 root root 0 Jul 17 15:09 ..
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event0 -> ../../devices/LNXSYSTM:00/LNXSYBUS:00/PNP0C0C:00/input/input0/event0
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event1 -> ../../devices/platform/i8042/serio0/input/input1/event1
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event10 -> ../../devices/pci0000:00/0000:00:14.3/PNP0C09:00/VPC2004:00/input/input15/event10
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event11 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input16/event11
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event12 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input17/event12
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event13 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input18/event13
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event14 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input19/event14
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event15 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.6/sound/card1/input20/event15
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event16 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.6/sound/card1/input21/event16
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event17 -> ../../devices/virtual/input/input22/event17
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event18 -> ../../devices/virtual/input/input23/event18
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event2 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.1/input/input11/event2
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event3 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input7/event3
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event4 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input8/event4
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event5 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input9/event5
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event6 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input10/event6
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event7 -> ../../devices/platform/pcspkr/input/input12/event7
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event8 -> ../../devices/platform/AMDI0010:02/i2c-1/i2c-NVTK0603:00/0018:0603:F200.0007/input/input13/event8
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 event9 -> ../../devices/LNXSYSTM:00/LNXSYBUS:00/PNP0A08:00/device:16/LNXVIDEO:00/input/input14/event9
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input0 -> ../../devices/LNXSYSTM:00/LNXSYBUS:00/PNP0C0C:00/input/input0
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input1 -> ../../devices/platform/i8042/serio0/input/input1
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input10 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input10
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input11 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.1/input/input11
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input12 -> ../../devices/platform/pcspkr/input/input12
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input13 -> ../../devices/platform/AMDI0010:02/i2c-1/i2c-NVTK0603:00/0018:0603:F200.0007/input/input13
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input14 -> ../../devices/LNXSYSTM:00/LNXSYBUS:00/PNP0A08:00/device:16/LNXVIDEO:00/input/input14
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input15 -> ../../devices/pci0000:00/0000:00:14.3/PNP0C09:00/VPC2004:00/input/input15
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input16 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input16
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input17 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input17
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input18 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input18
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input19 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.1/sound/card0/input19
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input20 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.6/sound/card1/input20
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input21 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.6/sound/card1/input21
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input22 -> ../../devices/virtual/input/input22
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input23 -> ../../devices/virtual/input/input23
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input7 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input7
+lrwxrwxrwx  1 root root 0 Jul 17 15:09 input8 -> ../../devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/input/input8
+
+===== udevadm info for each /dev/hidraw* =====
+--- /dev/hidraw0 ---
+DEVPATH=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.0/0003:1A86:E310.0001/hidraw/hidraw0
+DEVNAME=/dev/hidraw0
+MAJOR=245
+MINOR=0
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=2283431
+ID_VENDOR_FROM_DATABASE=QinHeng Electronics
+ID_PATH_WITH_USB_REVISION=pci-0000:c3:00.4-usbv2-0:1:1.0
+ID_PATH=pci-0000:c3:00.4-usb-0:1:1.0
+ID_PATH_TAG=pci-0000_c3_00_4-usb-0_1_1_0
+ID_FOR_SEAT=hidraw-pci-0000_c3_00_4-usb-0_1_1_0
+TAGS=:seat:uaccess:
+CURRENT_TAGS=:seat:uaccess:
+
+--- /dev/hidraw1 ---
+DEVPATH=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.2/0003:1A86:E310.0002/hidraw/hidraw1
+DEVNAME=/dev/hidraw1
+MAJOR=245
+MINOR=1
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=5582644
+ID_VENDOR_FROM_DATABASE=QinHeng Electronics
+ID_PATH_WITH_USB_REVISION=pci-0000:c3:00.4-usbv2-0:1:1.2
+ID_PATH=pci-0000:c3:00.4-usb-0:1:1.2
+ID_PATH_TAG=pci-0000_c3_00_4-usb-0_1_1_2
+ID_FOR_SEAT=hidraw-pci-0000_c3_00_4-usb-0_1_1_2
+DEVLINKS=/dev/inputplumber/by-hidden/hidraw1
+TAGS=:uaccess:seat:
+CURRENT_TAGS=:seat:
+
+--- /dev/hidraw2 ---
+DEVPATH=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.3/0003:1A86:E310.0003/hidraw/hidraw2
+DEVNAME=/dev/hidraw2
+MAJOR=245
+MINOR=2
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=2334230
+ID_VENDOR_FROM_DATABASE=QinHeng Electronics
+ID_PATH_WITH_USB_REVISION=pci-0000:c3:00.4-usbv2-0:1:1.3
+ID_PATH=pci-0000:c3:00.4-usb-0:1:1.3
+ID_PATH_TAG=pci-0000_c3_00_4-usb-0_1_1_3
+ID_FOR_SEAT=hidraw-pci-0000_c3_00_4-usb-0_1_1_3
+TAGS=:seat:uaccess:
+CURRENT_TAGS=:seat:uaccess:
+
+--- /dev/hidraw3 ---
+DEVPATH=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.4/0003:1A86:E310.0004/hidraw/hidraw3
+DEVNAME=/dev/hidraw3
+MAJOR=245
+MINOR=3
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=2387159
+ID_VENDOR_FROM_DATABASE=QinHeng Electronics
+ID_PATH_WITH_USB_REVISION=pci-0000:c3:00.4-usbv2-0:1:1.4
+ID_PATH=pci-0000:c3:00.4-usb-0:1:1.4
+ID_PATH_TAG=pci-0000_c3_00_4-usb-0_1_1_4
+ID_FOR_SEAT=hidraw-pci-0000_c3_00_4-usb-0_1_1_4
+TAGS=:uaccess:seat:
+CURRENT_TAGS=:uaccess:seat:
+
+--- /dev/hidraw4 ---
+DEVPATH=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.5/0003:1A86:E310.0005/hidraw/hidraw4
+DEVNAME=/dev/hidraw4
+MAJOR=245
+MINOR=4
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=6232404
+ID_VENDOR_FROM_DATABASE=QinHeng Electronics
+ID_PATH_WITH_USB_REVISION=pci-0000:c3:00.4-usbv2-0:1:1.5
+ID_PATH=pci-0000:c3:00.4-usb-0:1:1.5
+ID_PATH_TAG=pci-0000_c3_00_4-usb-0_1_1_5
+ID_FOR_SEAT=hidraw-pci-0000_c3_00_4-usb-0_1_1_5
+DEVLINKS=/dev/inputplumber/by-hidden/hidraw4
+TAGS=:seat:uaccess:
+CURRENT_TAGS=:seat:
+
+--- /dev/hidraw5 ---
+DEVPATH=/devices/pci0000:00/0000:00:08.1/0000:c3:00.4/usb3/3-1/3-1:1.6/0003:1A86:E310.0006/hidraw/hidraw5
+DEVNAME=/dev/hidraw5
+MAJOR=245
+MINOR=5
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=6269048
+ID_VENDOR_FROM_DATABASE=QinHeng Electronics
+ID_PATH_WITH_USB_REVISION=pci-0000:c3:00.4-usbv2-0:1:1.6
+ID_PATH=pci-0000:c3:00.4-usb-0:1:1.6
+ID_PATH_TAG=pci-0000_c3_00_4-usb-0_1_1_6
+ID_FOR_SEAT=hidraw-pci-0000_c3_00_4-usb-0_1_1_6
+DEVLINKS=/dev/inputplumber/by-hidden/hidraw5
+TAGS=:seat:uaccess:
+CURRENT_TAGS=:seat:
+
+--- /dev/hidraw6 ---
+DEVPATH=/devices/platform/AMDI0010:02/i2c-1/i2c-NVTK0603:00/0018:0603:F200.0007/hidraw/hidraw6
+DEVNAME=/dev/hidraw6
+MAJOR=245
+MINOR=6
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=2283453
+ID_VENDOR_FROM_DATABASE=Navatek Engineering Corporation
+ID_PATH=platform-AMDI0010:02
+ID_PATH_TAG=platform-AMDI0010_02
+ID_FOR_SEAT=hidraw-platform-AMDI0010_02
+TAGS=:uaccess:seat:
+CURRENT_TAGS=:uaccess:seat:
+
+--- /dev/hidraw7 ---
+DEVPATH=/devices/virtual/misc/uhid/0003:28DE:12FF.0008/hidraw/hidraw7
+DEVNAME=/dev/hidraw7
+MAJOR=245
+MINOR=7
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=6365736
+TAGS=:seat:uaccess:
+CURRENT_TAGS=:seat:uaccess:
+
+--- /dev/hidraw8 ---
+DEVPATH=/devices/0020:1022:0001.0009/hidraw/hidraw8
+DEVNAME=/dev/hidraw8
+MAJOR=245
+MINOR=8
+SUBSYSTEM=hidraw
+USEC_INITIALIZED=7228272
+TAGS=:uaccess:seat:
+CURRENT_TAGS=:uaccess:seat:
+
+
+===== InputPlumber D-Bus service discovery (busctl list filtered) =====
+:1.31                                    1776 wireplumber     deck                  :1.31         user@1000.service              -       -
+:1.32                                    1776 wireplumber     deck                  :1.32         user@1000.service              -       -
+:1.36                                    1776 wireplumber     deck                  :1.36         user@1000.service              -       -
+:1.37                                    1776 wireplumber     deck                  :1.37         user@1000.service              -       -
+:1.6                                     1209 inputplumber    root                  :1.6          inputplumber.service           -       -
+org.shadowblip.InputPlumber              1209 inputplumber    root                  :1.6          inputplumber.service           -       -
+
+===== InputPlumber D-Bus introspection at root =====
+node /org/shadowblip/InputPlumber {
+  interface org.freedesktop.DBus.ObjectManager {
+    methods:
+      GetManagedObjects(out a{oa{sa{sv}}} arg_0);
+    signals:
+      InterfacesAdded(o object_path,
+                      a{sa{sv}} interfaces_and_properties);
+      InterfacesRemoved(o object_path,
+                        as interfaces);
+    properties:
+  };
+  interface org.freedesktop.DBus.Properties {
+    methods:
+      Get(in  s interface_name,
+          in  s property_name,
+          out v arg_2);
+      Set(in  s interface_name,
+          in  s property_name,
+          in  v value);
+      GetAll(in  s interface_name,
+             out a{sv} arg_1);
+    signals:
+      PropertiesChanged(s interface_name,
+                        a{sv} changed_properties,
+                        as invalidated_properties);
+    properties:
+  };
+  interface org.freedesktop.DBus.Peer {
+    methods:
+      Ping();
+      GetMachineId(out s arg_0);
+    signals:
+    properties:
+  };
+  interface org.freedesktop.DBus.Introspectable {
+    methods:
+      Introspect(out s arg_0);
+    signals:
+    properties:
+  };
+  node Manager {
+    interface org.freedesktop.DBus.Introspectable {
+      methods:
+        Introspect(out s arg_0);
+      signals:
+      properties:
+    };
+    interface org.freedesktop.DBus.Properties {
+      methods:
+        Get(in  s interface_name,
+            in  s property_name,
+            out v arg_2);
+        Set(in  s interface_name,
+            in  s property_name,
+            in  v value);
+        GetAll(in  s interface_name,
+               out a{sv} arg_1);
+      signals:
+        PropertiesChanged(s interface_name,
+                          a{sv} changed_properties,
+
+===== InputPlumber config / data files =====
+(no /etc/inputplumber)
+total 0
+drwxr-xr-x 1 root root   72 Jul 15 17:42 .
+drwxr-xr-x 1 root root 4572 Jul 15 17:43 ..
+drwxr-xr-x 1 root root 1262 Jul 15 17:42 capability_maps
+drwxr-xr-x 1 root root 2622 Jul 15 17:42 devices
+drwxr-xr-x 1 root root  110 Jul 15 17:42 profiles
+drwxr-xr-x 1 root root  180 Jul 15 17:42 schema
+
+===== evdev devices via libevdev =====
+--- /dev/input/event0 ---
+ID_INPUT=1
+ID_INPUT_KEY=1
+
+--- /dev/input/event1 ---
+ID_INPUT=1
+ID_INPUT_KEY=1
+ID_INPUT_KEYBOARD=1
+
+--- /dev/input/event10 ---
+ID_INPUT=1
+ID_INPUT_KEY=1
+
+--- /dev/input/event11 ---
+ID_INPUT=1
+ID_INPUT_SWITCH=1
+
+--- /dev/input/event12 ---
+ID_INPUT=1
+ID_INPUT_SWITCH=1
+
+--- /dev/input/event13 ---
+ID_INPUT=1
+ID_INPUT_SWITCH=1
+
+--- /dev/input/event14 ---
+ID_INPUT=1
+ID_INPUT_SWITCH=1
+
+--- /dev/input/event15 ---
+ID_INPUT=1
+ID_INPUT_SWITCH=1
+
+--- /dev/input/event16 ---
+ID_INPUT=1
+ID_INPUT_KEY=1
+ID_INPUT_SWITCH=1
+
+--- /dev/input/event17 ---
+ID_INPUT=1
+ID_INPUT_KEY=1
+
+--- /dev/input/event18 ---
+ID_INPUT=1
+ID_INPUT_JOYSTICK=1
+
+--- /dev/input/event2 ---
+ID_INPUT=1
+ID_INPUT_JOYSTICK=1
+ID_MODEL=Legion_Go_S
+ID_MODEL_ENC=Legion\x20Go\x20S
+ID_MODEL_ID=e310
+ID_VENDOR=wch.cn
+ID_VENDOR_ENC=wch.cn
+ID_VENDOR_ID=1a86
+
+--- /dev/input/event3 ---
+ID_INPUT=1
+ID_INPUT_MOUSE=1
+ID_MODEL=Legion_Go_S
+ID_MODEL_ENC=Legion\x20Go\x20S
+ID_MODEL_ID=e310
+ID_VENDOR=wch.cn
+ID_VENDOR_ENC=wch.cn
+ID_VENDOR_ID=1a86
+
+--- /dev/input/event4 ---
+ID_INPUT=1
+ID_INPUT_KEY=1
+ID_MODEL=Legion_Go_S
+ID_MODEL_ENC=Legion\x20Go\x20S
+ID_MODEL_ID=e310
+ID_VENDOR=wch.cn
+ID_VENDOR_ENC=wch.cn
+ID_VENDOR_ID=1a86
+
+--- /dev/input/event5 ---
+ID_INPUT=1
+ID_MODEL=Legion_Go_S
+ID_MODEL_ENC=Legion\x20Go\x20S
+ID_MODEL_ID=e310
+ID_VENDOR=wch.cn
+ID_VENDOR_ENC=wch.cn
+ID_VENDOR_ID=1a86
+
+--- /dev/input/event6 ---
+ID_INPUT=1
+ID_INPUT_TOUCHPAD=1
+ID_INPUT_WIDTH_MM=30
+ID_INPUT_HEIGHT_MM=30
+ID_MODEL=Legion_Go_S
+ID_MODEL_ENC=Legion\x20Go\x20S
+ID_MODEL_ID=e310
+ID_VENDOR=wch.cn
+ID_VENDOR_ENC=wch.cn
+ID_VENDOR_ID=1a86
+ID_INPUT_TOUCHPAD_INTEGRATION=internal
+
+--- /dev/input/event7 ---
+ID_INPUT=1
+
+--- /dev/input/event8 ---
+ID_INPUT=1
+ID_INPUT_TOUCHSCREEN=1
+ID_INPUT_WIDTH_MM=174
+ID_INPUT_HEIGHT_MM=109
+
+--- /dev/input/event9 ---
+ID_INPUT=1
+ID_INPUT_KEY=1
+
+
+===== done =====
