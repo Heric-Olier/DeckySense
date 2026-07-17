@@ -39,7 +39,9 @@ PLUGIN_NAME: str = _PKG["name"]
 CURRENT_VERSION: str = _PKG.get("version", "0.0.0")
 
 GITHUB_OWNER: str = "Heric-Olier"
-GITHUB_REPO: str = "deckysense"
+# Match the GitHub repo's actual name (PascalCase) — the API does not
+# follow case-insensitive redirects reliably.
+GITHUB_REPO: str = "DeckySense"
 RELEASES_URL: str = (
     f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 )
