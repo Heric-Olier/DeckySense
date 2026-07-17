@@ -1,0 +1,123 @@
+
+===== uname =====
+Linux steamdeck 6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e #1 SMP PREEMPT_DYNAMIC Wed, 15 Jul 2026 21:55:55 +0000 x86_64 GNU/Linux
+
+===== /etc/os-release =====
+NAME="SteamOS"
+PRETTY_NAME="SteamOS"
+VERSION_CODENAME=holo
+ID=steamos
+ID_LIKE=arch
+ANSI_COLOR="1;35"
+HOME_URL="https://www.steampowered.com/"
+DOCUMENTATION_URL="https://support.steampowered.com/"
+SUPPORT_URL="https://support.steampowered.com/"
+BUG_REPORT_URL="https://support.steampowered.com/"
+LOGO=steamos
+VARIANT_ID=steamdeck
+VERSION_ID=3.8.23
+BUILD_ID=20260715.2
+STEAMOS_DEFAULT_UPDATE_BRANCH=stable
+
+===== /dev/hidraw* =====
+crw-rw----+ 1 root root 245, 0 Jul 17 15:09 /dev/hidraw0
+c---------  1 root root 245, 1 Jul 17 15:09 /dev/hidraw1
+crw-rw----+ 1 root root 245, 2 Jul 17 15:09 /dev/hidraw2
+crw-rw----+ 1 root root 245, 3 Jul 17 15:09 /dev/hidraw3
+c---------  1 root root 245, 4 Jul 17 15:09 /dev/hidraw4
+c---------  1 root root 245, 5 Jul 17 15:09 /dev/hidraw5
+crw-rw----+ 1 root root 245, 6 Jul 17 15:09 /dev/hidraw6
+crw-rw----+ 1 root root 245, 7 Jul 17 15:09 /dev/hidraw7
+crw-rw----+ 1 root root 245, 8 Jul 17 15:09 /dev/hidraw8
+
+===== lsusb (lenovo/legion) =====
+Bus 003 Device 002: ID 1a86:e310 QinHeng Electronics Legion Go S
+
+===== /proc/bus/input/devices (filtered to lenovo/legion) =====
+
+===== sysfs entries matching lenovo/legion/rumble/vibrat/haptic =====
+/sys/devices/virtual/firmware-attributes/lenovo-wmi-other-0
+
+===== loaded modules (lenovo/hid filtered) =====
+hid_sensor_als         16384  0
+hid_sensor_trigger     20480  2 hid_sensor_als
+industrialio_triggered_buffer    12288  1 hid_sensor_trigger
+hid_sensor_iio_common    20480  2 hid_sensor_trigger,hid_sensor_als
+industrialio          143360  4 industrialio_triggered_buffer,hid_sensor_trigger,kfifo_buf,hid_sensor_als
+hid_sensor_hub         32768  3 hid_sensor_trigger,hid_sensor_iio_common,hid_sensor_als
+lenovo_wmi_other      102400  0
+lenovo_wmi_gamezone    12288  0
+lenovo_wmi_helpers     12288  2 lenovo_wmi_other,lenovo_wmi_gamezone
+lenovo_wmi_hotkey_utilities    12288  0
+lenovo_wmi_capdata     20480  1 lenovo_wmi_other
+lenovo_wmi_events      12288  1 lenovo_wmi_gamezone
+firmware_attributes_class    12288  1 lenovo_wmi_other
+platform_profile       16384  2 lenovo_wmi_gamezone,ideapad_laptop
+hid_lenovo_go_s        40960  0
+i2c_hid_acpi           12288  0
+wmi                    32768  9 lenovo_wmi_events,video,lenovo_wmi_capdata,lenovo_wmi_hotkey_utilities,lenovo_wmi_other,wmi_bmof,lenovo_wmi_gamezone,ideapad_laptop,lenovo_wmi_helpers
+i2c_hid                45056  1 i2c_hid_acpi
+hid_playstation        49152  0
+led_class_multicolor    16384  2 hid_lenovo_go_s,hid_playstation
+hid_nintendo           53248  0
+ff_memless             20480  3 hid_nintendo,xpad,hid_playstation
+hid_multitouch         36864  0
+
+===== modinfo hid_lenovo_go =====
+filename:       /lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/hid/hid-lenovo-go.ko.zst
+license:        GPL
+description:    HID Driver for Lenovo Legion Go Series Gamepads.
+author:         Derek J. Clark
+srcversion:     2E1F3A4BE3B23D7039DA8E3
+alias:          hid:b0003g*v000017EFp000061EE
+alias:          hid:b0003g*v000017EFp000061ED
+alias:          hid:b0003g*v000017EFp000061EC
+alias:          hid:b0003g*v000017EFp000061EB
+depends:        led-class-multicolor
+intree:         Y
+name:           hid_lenovo_go
+retpoline:      Y
+vermagic:       6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e SMP preempt mod_unload 
+sig_id:         PKCS#7
+
+===== lenovo module files in /lib/modules =====
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/hid/hid-lenovo-go-s.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/hid/hid-lenovo-go.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/hid/hid-lenovo.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/hwmon/lenovo-ec-sensors.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-wmi-camera.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-wmi-capdata.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-wmi-events.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-wmi-gamezone.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-wmi-helpers.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-wmi-hotkey-utilities.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-wmi-other.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-ymc.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-yoga-tab2-pro-1380-fastcharger.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/platform/x86/lenovo/lenovo-yogabook.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/watchdog/lenovo_se10_wdt.ko.zst
+/lib/modules/6.16.12-drmexec7-valve24.5-1-neptune-616-drm-exec-gf253f5da553e/kernel/drivers/watchdog/lenovo_se30_wdt.ko.zst
+
+===== inputplumber service =====
+● inputplumber.service - InputPlumber Service
+     Loaded: loaded (/usr/lib/systemd/system/inputplumber.service; enabled-runtime; preset: disabled)
+     Active: active (running) since Fri 2026-07-17 15:09:13 -05; 8min ago
+ Invocation: 2322a8c23d01459e82c0f91d900186f4
+   Main PID: 1209 (inputplumber)
+      Tasks: 27 (limit: 18149)
+     Memory: 33.4M (peak: 35.4M)
+        CPU: 9.408s
+
+===== hhd (Handheld Daemon) =====
+Unit hhd.service could not be found.
+(not found)
+
+===== Steam processes =====
+   1239 ?        00:00:00 steamos-manager
+   1835 ?        00:00:00 steamos-manager
+   1836 ?        00:00:00 steamos-powerbu
+   1926 ?        00:00:00 SteamGridDB
+   2136 ?        00:00:00 steam_notif_dae
+
+===== done =====
