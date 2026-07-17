@@ -8,6 +8,70 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-07-17 — Roadmap reshuffle: Phase 4 first, lab second
+
+**Decision:** reorder the execution sequence after Phase 0 close.
+Phase 4 (auto-update) is pulled forward ahead of Phase 1/2, and
+Phase 1 (Display) + Phase 2 (Haptic) become a **parallel incremental
+lab** instead of two sequential slogs.
+
+**Why:**
+
+- Auto-update unblocks the only workflow that matters at this stage:
+  commit → push → "check for updates" on the device → feel the change.
+  Until that's in place, every deploy is a manual zip transfer.
+- Doing Display and Haptic as one big module each is slower to
+  validate than shipping small visible increments (two display
+  presets + a gain slider in v0.0.3 is more useful than nothing
+  for three months).
+- UX/UI is treated as a cross-cutting concern from day one, not a
+  polish phase at the end. Tab navigation with L1/R1, marquee text,
+  live-preview sliders, status indicators — all land alongside the
+  features they belong to.
+
+**Reference pattern:** `Hooandee/panel-de-control` (cloned and read).
+Key takeaways filed for the auto-update implementation:
+
+- Backend `self_updater.py` shape: `check(force)`, `install()`,
+  `restart_loader()`. Never raises; returns status dicts.
+  `LD_LIBRARY_PATH` is stripped before `systemctl restart
+  plugin_loader` so Decky's bundled libcrypto does not leak into the
+  systemctl call. Non-obvious; would have bitten us.
+- Frontend: module-level session guards (`sessionChecked`,
+  `sessionToasted`) so multiple `useUpdate` consumers share state
+  without re-fetching. Coarse progress states
+  (`idle|checking|installing|done|error`), no progress bar.
+- Tab navigation: `SteamClient.Input.RegisterForControllerInputMessages`
+  filtering button ids **30/31** (LSHOULDER/RSHOULDER). Note: in
+  SteamOS the "shoulders" are the bumpers (L1/R1), not the triggers.
+  Pure `cycleTab()` function with wrap-around; listener registered
+  once with refs; degrades silently if the API is missing.
+- UX detail to copy: `MarqueeText` (ping-pong scroll only when
+  overflow > 2px, replaces QAM's "Pot…" truncation), and `AlertDot`
+  on tab icons so update state is visible from any tab.
+
+**Done in this commit**
+
+- Reorganized `ROADMAP.md` to reflect the new order.
+- Added `.github/workflows/ci.yml` — install + build + Python smoke
+  check on every push and PR, plus dist artifact upload.
+- Added `.github/workflows/release.yml` — on `v*` tag, build + package
+  via `scripts/package.sh` + upload the zip to the GitHub release
+  with auto-generated release notes.
+- Added `.github/dependabot.yml` — npm and github-actions ecosystems,
+  weekly, limit 5 open PRs, conservative commit prefix `chore(deps)`.
+- Pinned `packageManager: pnpm@11.13.1` in `package.json` so CI and
+  local dev use the same pnpm.
+- Removed the obsolete `pnpm.peerDependencyRules` field — pnpm 11
+  ignores it and the install builds clean without it.
+
+**Next**
+
+Implement Phase 4 (auto-update + tab shell + shoulder navigation),
+then deploy as `v0.0.2` to validate the whole pipeline on the device.
+
+---
+
 ## 2026-07-17 — Phase 0 close: rumble sweep results
 
 A rumble sweep was driven through D-Bus at intensities
