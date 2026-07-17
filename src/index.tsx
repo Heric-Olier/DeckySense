@@ -1,29 +1,19 @@
-import {
-  PanelSection,
-  PanelSectionRow,
-  staticClasses,
-} from "@decky/ui";
+import { useState } from "react";
+import { staticClasses } from "@decky/ui";
 import { definePlugin } from "@decky/api";
 import { FaTachometerAlt } from "react-icons/fa";
+import { SECTIONS } from "./sections/registry";
+import { TabBar } from "./sections/TabBar";
 
 function Content() {
+  const [active, setActive] = useState(SECTIONS[0].id);
+  const activeSection = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];
+  const Active = activeSection.component;
+
   return (
     <>
-      <PanelSection title="Display Studio">
-        <PanelSectionRow>
-          <div className={staticClasses.Text}>Not implemented yet.</div>
-        </PanelSectionRow>
-      </PanelSection>
-      <PanelSection title="Haptic Studio">
-        <PanelSectionRow>
-          <div className={staticClasses.Text}>Not implemented yet.</div>
-        </PanelSectionRow>
-      </PanelSection>
-      <PanelSection title="Game Profiles">
-        <PanelSectionRow>
-          <div className={staticClasses.Text}>Not implemented yet.</div>
-        </PanelSectionRow>
-      </PanelSection>
+      <TabBar sections={SECTIONS} active={active} onSelect={setActive} />
+      <Active />
     </>
   );
 }

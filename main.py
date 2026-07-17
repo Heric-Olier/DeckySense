@@ -5,14 +5,16 @@ lifecycle and invokes the underscore-prefixed hooks at the right
 moments. Any other ``async def`` method on this class becomes an RPC
 callable from the TypeScript frontend via ``@decky/api``'s
 ``callable("method_name")``.
-
-For now this is a thin skeleton: the real per-module backends live in
-``py_modules/decksense/`` and will be wired in as each module lands.
 """
 
+from __future__ import annotations
+
 import asyncio
+from typing import Any
 
 import decky
+
+from decksense.updater import self_updater
 
 
 class Plugin:
@@ -22,7 +24,9 @@ class Plugin:
 
     async def _main(self) -> None:
         self.loop = asyncio.get_event_loop()
-        decky.logger.info("DeckSense backend started")
+        decky.logger.info(
+            "DeckSense backend started (v%s)", self_updater.CURRENT_VERSION
+        )
 
     async def _unload(self) -> None:
         decky.logger.info("DeckSense backend stopping")
@@ -31,4 +35,18 @@ class Plugin:
         decky.logger.info("DeckSense uninstalled")
 
     async def _migration(self) -> None:
-        decky.logger.info("DeckSense migration check (no-op for now)")
+        decky.logger.info("DeckSense migration check (no-op)")
+
+    # --- RPC: updater ----------------------------------------------------
+
+    async def get_current_version(self) -> str:
+        return self_updater.CURRENT_VERSION
+
+    async def check_for_update(self, force: bool = False) -> dict[str, Any]:
+        return await self.loop.run_in_executor(None, self_updater.check, force)
+
+    async def install_update(self) -> dict[str, Any]:
+        return await self.loop.run_in_executor(None, self_updater.install)
+
+    async def restart_loader(self) -> dict[str, Any]:
+        return await self.loop.run_in_executor(None, self_updater.restart_loader)
