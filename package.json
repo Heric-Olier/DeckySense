@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/decksense/decksense.git"
+    "url": "git+https://github.com/Heric-Olier/decksense.git"
   },
   "keywords": [
     "decky",
@@ -23,9 +23,9 @@
   "author": "Heric Olier",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/decksense/decksense/issues"
+    "url": "https://github.com/Heric-Olier/decksense/issues"
   },
-  "homepage": "https://github.com/decksense/decksense#readme",
+  "homepage": "https://github.com/Heric-Olier/decksense#readme",
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
     "@decky/ui": "^4.11.0",
