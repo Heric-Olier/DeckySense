@@ -28,7 +28,17 @@ class Plugin:
         decky.logger.info(
             "DeckySense backend started (v%s)", self_updater.CURRENT_VERSION
         )
-        get_gain_service().load_from_settings()
+        # Discover what settings API the running Decky Loader exposes.
+        # Across versions the names have moved around; this log helps
+        # diagnose persistence failures without crashing _main().
+        api_surface = sorted(
+            n for n in dir(decky) if not n.startswith("_") and "set" in n.lower() or "get" in n.lower()
+        )
+        decky.logger.info("decky api surface (get/set): %s", api_surface)
+        try:
+            get_gain_service().load_from_settings()
+        except Exception:  # noqa: BLE001
+            decky.logger.exception("gain_service.load_from_settings failed; using defaults")
 
     async def _unload(self) -> None:
         decky.logger.info("DeckySense backend stopping")

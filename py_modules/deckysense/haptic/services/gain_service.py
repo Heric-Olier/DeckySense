@@ -6,6 +6,11 @@ feel the effect of their settings.
 
 Gain is the simplest transform: multiply the requested intensity by
 the configured gain, clamp to [0.0, 1.0] (the hardware ceiling).
+
+Persistence uses ``decky.set_setting`` / ``decky.get_setting`` if
+available; if those are missing (the API surface has shifted between
+Decky Loader versions), the service silently degrades to in-memory
+only and logs the issue.
 """
 
 from __future__ import annotations
@@ -21,17 +26,34 @@ from ..domain import DEFAULT_GAIN, HapticParams
 SETTING_KEY = "haptic.gain"
 
 
+def _read_setting(key: str, default: Any) -> Any:
+    getter = getattr(decky, "get_setting", None)
+    if callable(getter):
+        try:
+            return getter(key, default)
+        except Exception:  # noqa: BLE001
+            decky.logger.exception("decky.get_setting raised; falling back to default")
+    return default
+
+
+def _write_setting(key: str, value: Any) -> None:
+    setter = getattr(decky, "set_setting", None)
+    if callable(setter):
+        try:
+            setter(key, value)
+        except Exception:  # noqa: BLE001
+            decky.logger.exception("decky.set_setting raised; setting not persisted")
+
+
 class GainService:
     """Single-instance service that owns haptic params."""
 
     def __init__(self, backend: Optional[HapticBackend] = None) -> None:
-        # Default to the InputPlumber adapter (the only one we have today).
-        # Tests can inject a mock backend.
         self._backend: HapticBackend = backend or InputPlumberAdapter()
         self._params: HapticParams = HapticParams(gain=DEFAULT_GAIN)
 
     def load_from_settings(self) -> None:
-        stored = decky.get_setting(SETTING_KEY, DEFAULT_GAIN)
+        stored = _read_setting(SETTING_KEY, DEFAULT_GAIN)
         try:
             gain = float(stored)
         except (TypeError, ValueError):
@@ -43,7 +65,7 @@ class GainService:
 
     def set_gain(self, value: float) -> dict[str, Any]:
         self._params = HapticParams(gain=float(value)).clamped()
-        decky.set_setting(SETTING_KEY, self._params.gain)
+        _write_setting(SETTING_KEY, self._params.gain)
         return self.get_params()
 
     def preview(self, raw_intensity: float = 0.5) -> dict[str, Any]:
@@ -51,7 +73,11 @@ class GainService:
         try:
             amplified = min(1.0, float(raw_intensity) * self._params.gain)
             self._backend.rumble(amplified)
-            return {"state": "playing", "intensity": amplified, "gain": self._params.gain}
+            return {
+                "state": "playing",
+                "intensity": amplified,
+                "gain": self._params.gain,
+            }
         except Exception as exc:  # noqa: BLE001
             decky.logger.exception("haptic preview failed")
             return {"state": "error", "error": f"{type(exc).__name__}: {exc}"}
