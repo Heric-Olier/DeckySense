@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   ButtonItem,
   PanelSection,
@@ -6,11 +5,34 @@ import {
   staticClasses,
 } from "@decky/ui";
 import { useUpdate } from "./useUpdate";
-import { UpdateModal } from "./UpdateModal";
 
+/**
+ * Inline update flow: a single button whose label and action depend on
+ * the current update state. No modal — fewer moving parts, less to
+ * break in the narrow QAM width.
+ *
+ * - idle / error → "Check for updates" / "Update failed — retry"
+ * - checking → disabled "Checking…"
+ * - available → "Update to v<latest>" → install()
+ * - installing → disabled "Installing…"
+ * - done → "Installed. Restart." → restart()
+ * - restarting → disabled "Restarting…"
+ */
 export function UpdatePanel() {
-  const { status, check } = useUpdate();
-  const [modalOpen, setModalOpen] = useState(false);
+  const { status, check, install, restart } = useUpdate();
+
+  const onButtonClick = async () => {
+    if (status.state === "available") {
+      await install();
+    } else if (status.state === "done") {
+      await restart();
+    } else if (status.state === "checking" || status.state === "installing" || status.state === "restarting") {
+      // No-op while a transition is in flight.
+      return;
+    } else {
+      await check(true);
+    }
+  };
 
   const label = (() => {
     switch (status.state) {
@@ -23,7 +45,7 @@ export function UpdatePanel() {
       case "installing":
         return "Installing…";
       case "done":
-        return "Restart required";
+        return "Installed. Restart.";
       case "restarting":
         return "Restarting…";
       case "error":
@@ -33,18 +55,15 @@ export function UpdatePanel() {
     }
   })();
 
-  const onClick = () => {
-    if (status.state === "available") {
-      setModalOpen(true);
-    } else {
-      void check(true);
-    }
-  };
+  const isDisabled =
+    status.state === "checking" ||
+    status.state === "installing" ||
+    status.state === "restarting";
 
   return (
     <PanelSection title="Updates">
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={onClick}>
+        <ButtonItem layout="below" disabled={isDisabled} onClick={onButtonClick}>
           {label}
         </ButtonItem>
       </PanelSectionRow>
@@ -58,7 +77,24 @@ export function UpdatePanel() {
           </div>
         </PanelSectionRow>
       )}
-      <UpdateModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      {status.release_notes && status.state === "available" && (
+        <PanelSectionRow>
+          <pre
+            style={{
+              whiteSpace: "pre-wrap",
+              margin: 0,
+              maxHeight: "180px",
+              overflow: "auto",
+              background: "rgba(255,255,255,0.05)",
+              padding: "8px",
+              borderRadius: "4px",
+              fontSize: "0.85em",
+            }}
+          >
+            {status.release_notes}
+          </pre>
+        </PanelSectionRow>
+      )}
     </PanelSection>
   );
 }
