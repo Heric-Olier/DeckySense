@@ -52,3 +52,16 @@ export const previewRumble = callable<[rawIntensity: number], PreviewResult>(
   "preview_rumble"
 );
 export const stopRumble = callable<[], PreviewResult>("stop_rumble");
+
+// --- Debug ---
+
+export interface DebugInfo {
+  pid: number;
+  uid: number;
+  gid: number;
+  env_keys: string[];
+  state: "ok" | "error";
+  error?: string;
+}
+
+export const debugHapticTest = callable<[], DebugInfo>("debug_haptic_test");

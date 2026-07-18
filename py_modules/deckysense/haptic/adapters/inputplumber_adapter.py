@@ -6,22 +6,12 @@ device that InputPlumber creates for the Go S. We shell out to
 always present on SteamOS and the rumble path is not latency-critical
 enough to justify a native binding.
 
-Two environment quirks of the plugin_loader process need to be handled:
-
-- ``LD_LIBRARY_PATH`` is set to Decky's bundled library directory and
-  breaks the system ``gdbus`` (it loads the wrong libgio/libglib and
-  exits 1 silently). Stripped before the subprocess runs.
-- The plugin_loader runs without an active logind session, so polkit
-  treats it as a non-interactive client and refuses to authorise
-  ``org.shadowblip.Output.ForceFeedback.Rumble``. InputPlumber respects
-  ``INSECURE_DISABLE_POLKIT=1`` as an escape hatch for exactly this
-  kind of caller; we set it on the subprocess env.
-
-  The "INSECURE" name is a warning, not a blocker: this plugin only
-  runs on the user's own device and only this subprocess is affected.
-  The cleaner long-term fix is to add the ``deck`` user to the
-  ``inputplumber`` group (the polkit rule already grants its members
-  full access). For now, this lets Haptic Studio work out of the box.
+The subprocess env is **rebuilt minimal** rather than inherited from
+``os.environ``. The plugin_loader process runs with only a handful of
+PyInstaller vars (``_PYI_*``, ``LD_LIBRARY_PATH``); inheriting those
+was breaking gdbus in two distinct ways at different points (libgio
+mismatch from LD_LIBRARY_PATH; unclear interference from _PYI_*).
+A clean env with just the basics avoids both.
 """
 
 from __future__ import annotations
@@ -37,10 +27,20 @@ DBUS_INTERFACE = "org.shadowblip.Output.ForceFeedback"
 
 
 def _build_env() -> dict[str, str]:
-    env = dict(os.environ)
-    env.pop("LD_LIBRARY_PATH", None)
-    env["INSECURE_DISABLE_POLKIT"] = "1"
-    return env
+    """Minimal env for the gdbus subprocess.
+
+    ``USER`` is what polkit reads via ``subject.user``; the rule in
+    ``/etc/polkit-1/rules.d/49-deckysense.rules`` authorises deck
+    without ``auth_admin``. ``HOME`` and ``PATH`` keep gdbus happy.
+    """
+    return {
+        "USER": "deck",
+        "HOME": "/home/deck",
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        # Kept as a belt-and-suspenders: lets InputPlumber's own
+        # polkit bypass kick in if it ever respects the caller's env.
+        "INSECURE_DISABLE_POLKIT": "1",
+    }
 
 
 class InputPlumberAdapter(HapticBackend):
@@ -82,4 +82,3 @@ class InputPlumberAdapter(HapticBackend):
         if result.returncode != 0:
             err = (result.stderr or result.stdout).strip()
             raise RuntimeError(f"gdbus exit {result.returncode}: {err}")
-

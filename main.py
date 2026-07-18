@@ -80,3 +80,28 @@ class Plugin:
 
     async def stop_rumble(self) -> dict[str, Any]:
         return await self.loop.run_in_executor(None, get_gain_service().stop)
+
+    # --- RPC: debug ------------------------------------------------------
+
+    async def debug_haptic_test(self) -> dict[str, Any]:
+        """Run the exact gdbus call from this plugin's context.
+
+        Returns the call's outcome plus the plugin's PID/UID/env so we
+        can diagnose why an authorised polkit rule is being refused.
+        """
+        import os as _os
+        from deckysense.haptic.adapters.inputplumber_adapter import InputPlumberAdapter
+
+        info: dict[str, Any] = {
+            "pid": _os.getpid(),
+            "uid": _os.getuid(),
+            "gid": _os.getgid(),
+            "env_keys": sorted(_os.environ.keys()),
+        }
+        try:
+            InputPlumberAdapter().rumble(0.3)
+            info["state"] = "ok"
+        except Exception as exc:
+            info["state"] = "error"
+            info["error"] = f"{type(exc).__name__}: {exc}"
+        return info

@@ -7,10 +7,12 @@ import {
   staticClasses,
 } from "@decky/ui";
 import {
+  debugHapticTest,
   getHapticParams,
   previewRumble,
   setHapticGain,
   stopRumble,
+  type DebugInfo,
 } from "../api";
 
 const PREVIEW_INTENSITY = 0.5;
@@ -29,6 +31,7 @@ export function GainPanel() {
   const [gain, setGain] = useState(1.0);
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debug, setDebug] = useState<string | null>(null);
   const stopTimeoutRef = useRef<number | null>(null);
 
   // Load persisted gain on mount.
@@ -103,6 +106,33 @@ export function GainPanel() {
           <div className={staticClasses.Text} style={{ opacity: 0.6, padding: "0 8px" }}>
             {error}
           </div>
+        </PanelSectionRow>
+      )}
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          onClick={async () => {
+            const r: DebugInfo = await debugHapticTest();
+            setDebug(JSON.stringify(r, null, 2));
+          }}
+        >
+          Run haptic debug
+        </ButtonItem>
+      </PanelSectionRow>
+      {debug && (
+        <PanelSectionRow>
+          <pre
+            style={{
+              whiteSpace: "pre-wrap",
+              margin: 0,
+              background: "rgba(255,255,255,0.05)",
+              padding: "8px",
+              borderRadius: "4px",
+              fontSize: "0.8em",
+            }}
+          >
+            {debug}
+          </pre>
         </PanelSectionRow>
       )}
     </PanelSection>
