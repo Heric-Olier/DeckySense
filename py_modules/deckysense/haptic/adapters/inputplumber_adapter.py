@@ -6,10 +6,22 @@ device that InputPlumber creates for the Go S. We shell out to
 always present on SteamOS and the rumble path is not latency-critical
 enough to justify a native binding.
 
-The subprocess environment has ``LD_LIBRARY_PATH`` stripped because
-plugin_loader sets it to Decky's bundled library directory, which
-breaks ``gdbus`` (it loads a different libgio/libglib and exits 1
-silently). Same pattern as ``restart_loader()``.
+Two environment quirks of the plugin_loader process need to be handled:
+
+- ``LD_LIBRARY_PATH`` is set to Decky's bundled library directory and
+  breaks the system ``gdbus`` (it loads the wrong libgio/libglib and
+  exits 1 silently). Stripped before the subprocess runs.
+- The plugin_loader runs without an active logind session, so polkit
+  treats it as a non-interactive client and refuses to authorise
+  ``org.shadowblip.Output.ForceFeedback.Rumble``. InputPlumber respects
+  ``INSECURE_DISABLE_POLKIT=1`` as an escape hatch for exactly this
+  kind of caller; we set it on the subprocess env.
+
+  The "INSECURE" name is a warning, not a blocker: this plugin only
+  runs on the user's own device and only this subprocess is affected.
+  The cleaner long-term fix is to add the ``deck`` user to the
+  ``inputplumber`` group (the polkit rule already grants its members
+  full access). For now, this lets Haptic Studio work out of the box.
 """
 
 from __future__ import annotations
@@ -24,9 +36,10 @@ DBUS_PATH = "/org/shadowblip/InputPlumber/CompositeDevice0"
 DBUS_INTERFACE = "org.shadowblip.Output.ForceFeedback"
 
 
-def _clean_env() -> dict[str, str]:
+def _build_env() -> dict[str, str]:
     env = dict(os.environ)
     env.pop("LD_LIBRARY_PATH", None)
+    env["INSECURE_DISABLE_POLKIT"] = "1"
     return env
 
 
@@ -57,13 +70,16 @@ class InputPlumberAdapter(HapticBackend):
         try:
             result = subprocess.run(
                 cmd,
-                env=_clean_env(),
+                env=_build_env(),
                 capture_output=True,
                 text=True,
                 timeout=5,
             )
         except FileNotFoundError as exc:
-            raise RuntimeError(f"gdbus binary not found at /usr/bin/gdbus: {exc}") from exc
+            raise RuntimeError(
+                f"gdbus binary not found at /usr/bin/gdbus: {exc}"
+            ) from exc
         if result.returncode != 0:
             err = (result.stderr or result.stdout).strip()
             raise RuntimeError(f"gdbus exit {result.returncode}: {err}")
+
