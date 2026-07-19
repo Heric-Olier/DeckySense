@@ -1,7 +1,7 @@
 {
   "name": "DeckySense",
   "author": "Heric Olier",
-  "flags": ["_root"],
+  "flags": ["root", "_root"],
   "api_version": 1,
   "publish": {
     "tags": ["utility", "display", "haptic"],
