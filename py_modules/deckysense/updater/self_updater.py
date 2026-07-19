@@ -20,9 +20,11 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
 import shutil
 import ssl
+import string
 import subprocess
 import tempfile
 import traceback
@@ -256,21 +258,32 @@ def install() -> dict[str, Any]:
             if not src.is_dir():
                 raise RuntimeError("bad_zip: no plugin folder found")
 
-            # Rename the entire plugin dir out of the way so we don't trip
-            # over root-owned files left by a prior sudo manual install.
-            # Rename only requires w+x on the *parent directory*
-            # (/home/deck/homebrew/plugins/) which deck owns, NOT on the
-            # directory itself or its contents.
-            backup = tmpd / "old_plugin"
-            _PLUGIN_ROOT.rename(backup)
-            _PLUGIN_ROOT.mkdir(parents=True, exist_ok=True)
+            # Stage 1 — copy fresh files to a staging directory on the same
+            # filesystem as the plugin root (so os.rename works later).
+            # We can NOT rename across filesystems (/tmp/ is tmpfs, /home/ is
+            # btrfs), and we can NOT overwrite root-owned files in-place.
+            suffix = "".join(random.choices(string.ascii_lowercase, k=8))
+            staging = _PLUGIN_ROOT.parent / f"{_PLUGIN_ROOT.name}.{suffix}"
+            shutil.copytree(src, staging)
 
-            for item in src.iterdir():
-                dest = _PLUGIN_ROOT / item.name
-                if item.is_dir():
-                    shutil.copytree(item, dest)
-                else:
-                    shutil.copy2(item, dest)
+            # Stage 2 — atomic swap.  os.rename() on the *parent* directory
+            # (which deck owns) works regardless of who owns the moved dir's
+            # contents.
+            backup = _PLUGIN_ROOT.parent / f"{_PLUGIN_ROOT.name}.bak"
+            if backup.exists():
+                shutil.rmtree(backup)
+            _PLUGIN_ROOT.rename(backup)
+            staging.rename(_PLUGIN_ROOT)
+
+            # Stage 3 — best-effort cleanup of the old (possibly root-owned)
+            # backup.  If it fails the user may manually `sudo chown` once.
+            try:
+                shutil.rmtree(backup)
+            except Exception:
+                decky.logger.info("[updater] backup cleanup deferred (root-owned files)")
+
+        _mark_installed()
+        status.state = "done"
 
         _mark_installed()
         status.state = "done"
