@@ -10,6 +10,8 @@ callable from the TypeScript frontend via ``@decky/api``'s
 from __future__ import annotations
 
 import asyncio
+import json
+import os as _os
 from typing import Any
 
 import decky
@@ -88,8 +90,9 @@ class Plugin:
 
         Returns the call's outcome plus the plugin's PID/UID/env so we
         can diagnose why an authorised polkit rule is being refused.
+        Also dumps the full info to /tmp/deckysense-haptic-debug.json for
+        easy retrieval from SSH/desktop mode.
         """
-        import os as _os
         from deckysense.haptic.adapters.inputplumber_adapter import InputPlumberAdapter
 
         info: dict[str, Any] = {
@@ -104,4 +107,9 @@ class Plugin:
         except Exception as exc:
             info["state"] = "error"
             info["error"] = f"{type(exc).__name__}: {exc}"
+        try:
+            with open("/tmp/deckysense-haptic-debug.json", "w") as _f:
+                json.dump(info, _f, indent=2)
+        except Exception:
+            pass
         return info
