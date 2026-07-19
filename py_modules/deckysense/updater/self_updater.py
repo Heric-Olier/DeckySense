@@ -243,8 +243,11 @@ def install() -> dict[str, Any]:
             with zipfile.ZipFile(zpath) as zf:
                 zf.extractall(extract)
 
-            name = _PLUGIN_JSON.get("name", PLUGIN_NAME)
-            src = extract / name
+            # Zip top-level dir matches package.json "name" (lowercase),
+            # not plugin.json "name" (which may be capitalized for display).
+            src = extract / PLUGIN_NAME
+            if not src.is_dir():
+                src = extract / _PLUGIN_JSON.get("name", "")
             if not src.is_dir():
                 subdirs = [p for p in extract.iterdir() if p.is_dir()]
                 if len(subdirs) == 1:
@@ -265,7 +268,7 @@ def install() -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001
         decky.logger.error(f"[updater] install failed: {exc}")
         status.state = "error"
-        status.error = "install_failed"
+        status.error = f"install_failed: {exc}"
 
     return status.to_dict()
 
