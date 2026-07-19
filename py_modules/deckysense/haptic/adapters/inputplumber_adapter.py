@@ -30,8 +30,7 @@ FF_RUMBLE = 0x50
 # EVIOCSFF = _IOW('E', 0x80, struct ff_effect)
 EVIOCSFF = 0x40304580  # (1 << 30) | (48 << 16) | (ord('E') << 8) | 0x80
 
-EVIOCGBIT = 0x80084535  # _IOR('E', 0x35, 8) for EV_FF (0x15)
-EV_FF_BIT = 0x50
+EVIOCGBIT = 0x80084520  # _IOR('E', 0x20, 8) — query supported EV_* types
 
 
 def _pack_ff_effect(strong: int, weak: int, length_ms: int = 500) -> bytes:
@@ -62,8 +61,7 @@ def _supports_ff(path: str) -> bool:
         buf = bytearray(8)
         fcntl.ioctl(fd, EVIOCGBIT, buf, True)
         bitmask = int.from_bytes(buf, "little")
-        if bitmask & (1 << EV_FF_BIT):
-            return True
+        return bool(bitmask & (1 << EV_FF))
     except OSError:
         return False
     finally:
