@@ -19,8 +19,15 @@ class HapticBackend(Protocol):
     ``rumble(intensity, balance)``:
       intensity: overall amplitude [0.0–1.0].
       balance:   strong/weak motor split [0.0–1.0]; 0.5 = equal.
+
+    ``set_kernel_gain(gain)``:
+      Forward the user's gain to the kernel-level ``FF_GAIN`` so game
+      rumble is also affected.  gain is [0.0–1.0]; backends that cannot
+      set a global gain should silently no-op.
     """
 
     def rumble(self, intensity: float, balance: float = 0.5) -> None: ...
 
     def stop(self) -> None: ...
+
+    def set_kernel_gain(self, gain: float) -> None: ...

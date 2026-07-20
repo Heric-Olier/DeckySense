@@ -2,6 +2,10 @@
 
 Uses ``EVIOCSFF`` + ``EV_FF`` ioctls directly on the native gamepad event
 device. This bypasses polkit and D-Bus entirely.
+
+The adapter also sets the kernel-level ``FF_GAIN`` via ``EVIOCSGAIN`` so
+that gain/balance adjustments affect **all** rumble on the device,
+including force feedback from games — not just the plugin's own preview.
 """
 
 from __future__ import annotations
@@ -21,6 +25,8 @@ FF_RUMBLE = 0x50
 EVIOCSFF = 0x40304580  # (1 << 30) | (48 << 16) | (ord('E') << 8) | 0x80
 # EVIOCRMFF = _IOW('E', 0x81, int)
 EVIOCRMFF = 0x40044581  # (1 << 30) | (4 << 16) | (ord('E') << 8) | 0x81
+# EVIOCSGAIN = _IOW('E', 0x82, __u16)
+EVIOCSGAIN = 0x40024582  # (1 << 30) | (2 << 16) | (ord('E') << 8) | 0x82
 
 
 def _pack_ff_effect(strong: int, weak: int, length_ms: int = 500) -> bytes:
@@ -67,11 +73,40 @@ def _evdev_find() -> int | None:
 
 
 class _EvdevFF:
-    """Upload and play rumble via evdev ioctls (no D-Bus, no polkit)."""
+    """Upload and play rumble via evdev ioctls (no D-Bus, no polkit).
+
+    ``kernel_gain`` (0.0–1.0) is forwarded to the kernel via
+    ``EVIOCSGAIN`` so that games' force-feedback is also attenuated.
+    """
 
     def __init__(self) -> None:
         self._fd: int | None = None
         self._effect_id: int | None = None
+
+    def _ensure_open(self) -> None:
+        if self._fd is not None:
+            return
+        fd = _evdev_find()
+        if fd is None:
+            raise RuntimeError(
+                "evdev: no /dev/input/event* device supports force-feedback"
+            )
+        self._fd = fd
+
+    def set_kernel_gain(self, gain: float) -> None:
+        """Set global FF gain on the device via EVIOCSGAIN.
+
+        This affects ALL force-feedback on the device, including game
+        rumble.  ``gain`` is clamped to [0.0, 1.0]; the kernel treats
+        ``0xFFFF`` as 100 % (no attenuation).
+        """
+        self._ensure_open()
+        clamped = max(0.0, min(1.0, float(gain)))
+        raw = round(0xFFFF * clamped)
+        try:
+            fcntl.ioctl(self._fd, EVIOCSGAIN, struct.pack("<H", raw))
+        except OSError:
+            pass  # Driver may not support FF_GAIN; degrade silently.
 
     def _ensure_open(self) -> None:
         if self._fd is not None:
@@ -141,3 +176,6 @@ class InputPlumberAdapter(HapticBackend):
 
     def stop(self) -> None:
         _evdev.stop()
+
+    def set_kernel_gain(self, gain: float) -> None:
+        _evdev.set_kernel_gain(gain)

@@ -67,6 +67,10 @@ class GainService:
         except (TypeError, ValueError):
             balance = DEFAULT_BALANCE
         self._params = HapticParams(gain=gain, balance=balance).clamped()
+        try:
+            self._backend.set_kernel_gain(min(1.0, self._params.gain))
+        except Exception:  # noqa: BLE001
+            pass
 
     def get_params(self) -> dict[str, Any]:
         return {"gain": self._params.gain, "balance": self._params.balance}
@@ -76,6 +80,13 @@ class GainService:
             gain=float(value), balance=self._params.balance
         ).clamped()
         _write_setting(SETTING_KEY_GAIN, self._params.gain)
+        # Forward to kernel-level FF_GAIN so game rumble is also
+        # attenuated. Kernel maxes out at 1.0; values > 1.0 only
+        # affect the plugin's own preview effects.
+        try:
+            self._backend.set_kernel_gain(min(1.0, self._params.gain))
+        except Exception:  # noqa: BLE001
+            pass
         return self.get_params()
 
     def set_balance(self, value: float) -> dict[str, Any]:
