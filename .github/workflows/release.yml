@@ -34,9 +34,26 @@ jobs:
 
       - name: Upload zip to release
         run: |
-          gh release create "${{ github.ref_name }}" \
-            --repo "${{ github.repository }}" \
-            --generate-notes \
-            out/*.zip
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i/5 to create release..."
+            if gh release create "${{ github.ref_name }}" \
+              --repo "${{ github.repository }}" \
+              --generate-notes \
+              out/*.zip; then
+              echo "Release created successfully!"
+              exit 0
+            fi
+            echo "Attempt $i failed, waiting $((i * 30))s before retry..."
+            sleep $((i * 30))
+          done
+          echo "All attempts failed!"
+          exit 1
         env:
           GH_TOKEN: ${{ github.token }}
+
+      - name: Upload artifact (fallback)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deckysense-${{ github.ref_name }}.zip
+          path: out/*.zip
