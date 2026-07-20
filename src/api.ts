@@ -58,6 +58,25 @@ export const previewRumble = callable<[rawIntensity: number], PreviewResult>(
 );
 export const stopRumble = callable<[], PreviewResult>("stop_rumble");
 
+// --- Haptic backend management ----------------------------------------
+
+export interface BackendInfo {
+  id: string;
+  name: string;
+  description: string;
+  features: string[];
+}
+
+export const listHapticBackends = callable<[], BackendInfo[]>(
+  "list_haptic_backends"
+);
+export const getHapticBackendInfo = callable<[], BackendInfo>(
+  "get_haptic_backend_info"
+);
+export const switchHapticBackend = callable<[backendId: string], BackendInfo>(
+  "switch_haptic_backend"
+);
+
 // --- Debug ---
 
 export interface DebugInfo {

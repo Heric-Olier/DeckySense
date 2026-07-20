@@ -1,16 +1,11 @@
 """Gain service.
 
-Owns the current ``HapticParams`` and exposes the operations the
-frontend needs: read/write gain, and a preview pulse so the user can
-feel the effect of their settings.
+Owns the current ``HapticParams`` and the active backend.  Exposes
+operations the frontend needs: read/write gain, read/write balance,
+trigger a preview pulse, and — new — list available backends / hot-
+swap the active backend.
 
-Gain is the simplest transform: multiply the requested intensity by
-the configured gain, clamp to [0.0, 1.0] (the hardware ceiling).
-
-Persistence uses ``decky.set_setting`` / ``decky.get_setting`` if
-available; if those are missing (the API surface has shifted between
-Decky Loader versions), the service silently degrades to in-memory
-only and logs the issue.
+Persistence uses ``decky.set_setting`` / ``decky.get_setting``.
 """
 
 from __future__ import annotations
@@ -20,11 +15,15 @@ from typing import Any, Optional
 import decky
 
 from ..adapters import HapticBackend
-from ..adapters.uinput_proxy import UinputProxy
+from ..adapters.registry import create_backend, list_backends
 from ..domain import DEFAULT_BALANCE, DEFAULT_GAIN, HapticParams
 
-SETTING_KEY_GAIN = "haptic.gain"
-SETTING_KEY_BALANCE = "haptic.balance"
+SETTING_KEY_GAIN      = "haptic.gain"
+SETTING_KEY_BALANCE   = "haptic.balance"
+SETTING_KEY_BACKEND   = "haptic.backend_id"
+
+
+# ── helpers ────────────────────────────────────────────────────────
 
 
 def _read_setting(key: str, default: Any) -> Any:
@@ -46,33 +45,73 @@ def _write_setting(key: str, value: Any) -> None:
             decky.logger.exception("decky.set_setting raised; setting not persisted")
 
 
-class GainService:
-    """Single-instance service that owns haptic params."""
+# ── service ────────────────────────────────────────────────────────
 
-    def __init__(self, backend: Optional[HapticBackend] = None) -> None:
-        if backend is None:
-            backend = self._default_backend()
-        self._backend: HapticBackend = backend
+
+class GainService:
+    """Single-instance service that owns haptic params + active backend."""
+
+    def __init__(self) -> None:
+        self._backend: HapticBackend | None = None
         self._params: HapticParams = HapticParams(
             gain=DEFAULT_GAIN, balance=DEFAULT_BALANCE
         )
 
-    @staticmethod
-    def _default_backend() -> HapticBackend:
-        """Try UinputProxy first (full gain/balance support); fall back to evdev."""
+    # ── backend management ─────────────────────────────────────────
+
+    @property
+    def active_backend_id(self) -> str:
+        if self._backend is None:
+            return ""
+        return self._backend.id
+
+    def list_backends(self) -> list[dict[str, Any]]:
+        return list_backends()
+
+    def get_backend_info(self) -> dict[str, Any]:
+        """Return metadata about the currently active backend."""
+        if self._backend is None:
+            return {}
+        return {
+            "id": self._backend.id,
+            "name": self._backend.name,
+            "description": self._backend.description,
+            "features": sorted(self._backend.features),
+        }
+
+    def switch_backend(self, backend_id: str) -> dict[str, Any]:
+        """Hot-swap the active backend.  Persists the choice."""
+        if self._backend is not None and self._backend.id == backend_id:
+            return self.get_backend_info()
         try:
-            return UinputProxy()
+            new = create_backend(backend_id)
+        except KeyError as exc:
+            raise ValueError(f"Unknown backend: {backend_id}") from exc
+        old = self._backend
+        self._backend = new
+        if old is not None:
+            try:
+                old.close()
+            except Exception:  # noqa: BLE001
+                pass
+        # Re-apply current params to the new backend
+        try:
+            self._backend.set_kernel_gain(min(1.0, self._params.gain))
         except Exception:  # noqa: BLE001
-            decky.logger.warning(
-                "UinputProxy init failed, falling back to InputPlumberAdapter",
-                exc_info=True,
-            )
-        from ..adapters.inputplumber_adapter import InputPlumberAdapter  # noqa: PLC0415
-        return InputPlumberAdapter()
+            pass
+        try:
+            self._backend.set_balance(self._params.balance)
+        except Exception:  # noqa: BLE001
+            pass
+        _write_setting(SETTING_KEY_BACKEND, backend_id)
+        decky.logger.info("switched haptic backend to %s", backend_id)
+        return self.get_backend_info()
 
     def load_from_settings(self) -> None:
+        """Load persisted params and start the last-used backend."""
         stored_gain = _read_setting(SETTING_KEY_GAIN, DEFAULT_GAIN)
         stored_balance = _read_setting(SETTING_KEY_BALANCE, DEFAULT_BALANCE)
+        stored_backend = _read_setting(SETTING_KEY_BACKEND, "inputplumber")
         try:
             gain = float(stored_gain)
         except (TypeError, ValueError):
@@ -82,6 +121,20 @@ class GainService:
         except (TypeError, ValueError):
             balance = DEFAULT_BALANCE
         self._params = HapticParams(gain=gain, balance=balance).clamped()
+        # Start the selected backend (fall back to inputplumber on error)
+        try:
+            self._backend = create_backend(str(stored_backend))
+        except Exception:  # noqa: BLE001
+            decky.logger.warning(
+                "failed to create backend '%s', falling back to inputplumber",
+                stored_backend,
+                exc_info=True,
+            )
+            try:
+                self._backend = create_backend("inputplumber")
+            except Exception:  # noqa: BLE001
+                decky.logger.exception("inputplumber backend also failed; no haptic available")
+                return
         try:
             self._backend.set_kernel_gain(min(1.0, self._params.gain))
         except Exception:  # noqa: BLE001
@@ -90,6 +143,8 @@ class GainService:
             self._backend.set_balance(self._params.balance)
         except Exception:  # noqa: BLE001
             pass
+
+    # ── params ─────────────────────────────────────────────────────
 
     def get_params(self) -> dict[str, Any]:
         return {"gain": self._params.gain, "balance": self._params.balance}
@@ -99,10 +154,11 @@ class GainService:
             gain=float(value), balance=self._params.balance
         ).clamped()
         _write_setting(SETTING_KEY_GAIN, self._params.gain)
-        try:
-            self._backend.set_kernel_gain(min(1.0, self._params.gain))
-        except Exception:  # noqa: BLE001
-            pass
+        if self._backend is not None:
+            try:
+                self._backend.set_kernel_gain(min(1.0, self._params.gain))
+            except Exception:  # noqa: BLE001
+                pass
         return self.get_params()
 
     def set_balance(self, value: float) -> dict[str, Any]:
@@ -110,14 +166,19 @@ class GainService:
             gain=self._params.gain, balance=float(value)
         ).clamped()
         _write_setting(SETTING_KEY_BALANCE, self._params.balance)
-        try:
-            self._backend.set_balance(self._params.balance)
-        except Exception:  # noqa: BLE001
-            pass
+        if self._backend is not None:
+            try:
+                self._backend.set_balance(self._params.balance)
+            except Exception:  # noqa: BLE001
+                pass
         return self.get_params()
+
+    # ── preview ────────────────────────────────────────────────────
 
     def preview(self, raw_intensity: float = 0.5) -> dict[str, Any]:
         """Trigger a rumble at ``raw_intensity * gain``, clamped to 1.0."""
+        if self._backend is None:
+            return {"state": "error", "error": "No active backend"}
         try:
             amplified = min(1.0, float(raw_intensity) * self._params.gain)
             self._backend.rumble(amplified, self._params.balance)
@@ -131,7 +192,18 @@ class GainService:
             decky.logger.exception("haptic preview failed")
             return {"state": "error", "error": f"{type(exc).__name__}: {exc}"}
 
+    def close_backend(self) -> None:
+        """Close the active backend (called on plugin unload)."""
+        if self._backend is not None:
+            try:
+                self._backend.close()
+            except Exception:  # noqa: BLE001
+                pass
+            self._backend = None
+
     def stop(self) -> dict[str, Any]:
+        if self._backend is None:
+            return {"state": "stopped"}
         try:
             self._backend.stop()
             return {"state": "stopped"}
@@ -140,7 +212,8 @@ class GainService:
             return {"state": "error", "error": f"{type(exc).__name__}: {exc}"}
 
 
-# Module-level singleton so RPC handlers in main.py share state.
+# ── module-level singleton ─────────────────────────────────────────
+
 _instance: Optional[GainService] = None
 
 

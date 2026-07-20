@@ -130,6 +130,12 @@ def _find_gamepad() -> tuple[int, str]:
 class UinputProxy(HapticBackend):
     """Grab the real gamepad, create a uinput proxy, intercept FF effects.
 
+    **Experimental.** The proxy grabs the real device away from
+    InputPlumber and creates a new virtual device. No game connects to
+    this virtual device by default, so gain/balance still won't reach
+    games under normal Steam Input flow. Useful for testing the
+    interception mechanism in isolation.
+
     Usage
     -----
     Create a single instance and keep it alive for the lifetime of the
@@ -142,6 +148,16 @@ class UinputProxy(HapticBackend):
     asyncio executor thread.  The proxy spawns its own reader thread for
     the input-event loop.
     """
+
+    id = "uinput_proxy"
+    name = "Uinput Proxy (experimental)"
+    description = (
+        "Grabs the real gamepad and creates a virtual device. "
+        "Intercepts force-feedback uploads per-effect. "
+        "Experimental — games don't normally connect to the proxy, "
+        "so gain/balance may not reach them through Steam Input."
+    )
+    features = frozenset({"gain", "balance"})
 
     def __init__(self) -> None:
         self._lock = threading.Lock()

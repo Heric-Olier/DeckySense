@@ -8,6 +8,63 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-07-20 — v0.0.41: three backends + hot-swap UX
+
+**Problem.** The uinput proxy (v0.0.40) creates a virtual device that no
+game connects to — games send force-feedback through the `deck-uhid`
+device managed by InputPlumber, not through the proxy. Gain/balance
+still didn't reach games.
+
+**Architecture: 3 backends, hot-swappable at runtime.**
+
+The `HapticBackend` Protocol was enriched with identity metadata (`id`,
+`name`, `description`, `features`) so the frontend can enumerate and
+describe every backend without knowing its internals.
+
+A `registry.py` module provides the single source of truth:
+
+| Backend | id | Approach | Game gain |
+|---------|----|----------|:---------:|
+| D-Bus / Deck-UHID | `inputplumber` | evdev directly on real device | NO |
+| Kernel FF_GAIN | `ff_gain` | Switch InputPlumber to xb360 target, write `EVIOCSGAIN` + `EV_FF`/`FF_GAIN` | **YES** |
+| Uinput Proxy | `uinput_proxy` | Grab + proxy, per-effect intercept (original) | NO |
+
+**Key files changed (v0.0.41).**
+
+- `py_modules/deckysense/haptic/adapters/__init__.py` — Protocol now
+  requires `id`, `name`, `description`, `features`.
+- `py_modules/deckysense/haptic/adapters/registry.py` — **new.** Lazy
+  registry + factory so failing backends don't block others.
+- `py_modules/deckysense/haptic/adapters/ff_gain.py` — **new.** Switches
+  InputPlumber target to `xb360` via D-Bus `SetTargetDevices`, then
+  writes kernel `FF_GAIN` on the virtual Xbox 360 device. This is the
+  first backend that can actually scale game rumble.
+- `py_modules/deckysense/haptic/adapters/inputplumber_adapter.py` —
+  Updated metadata.
+- `py_modules/deckysense/haptic/adapters/uinput_proxy.py` — Updated
+  metadata, marked experimental.
+- `py_modules/deckysense/haptic/services/gain_service.py` — Refactored
+  to support `switch_backend(id)` hot-swap. Persists `haptic.backend_id`
+  in settings. Added `close_backend()` called on plugin unload.
+- `main.py` — 3 new RPCs: `list_haptic_backends`, `get_haptic_backend_info`,
+  `switch_haptic_backend`. Backend cleanup on `_unload`.
+- `src/api.ts` — `BackendInfo` type + 3 callables for backend management.
+- `src/haptic/BackendCard.tsx` — **new.** Selectable card for each
+  backend with name, description, feature tags.
+- `src/haptic/GainPanel.tsx` — Refactored: shows 3 backend cards, then
+  gain/balance sliders that adapt to the active backend's features, plus
+  a feature-summary table.
+
+**Release workflow reminder.** After completing a feature:
+1. Bump version in `package.json`.
+2. Write `DEVLOG.md` entry at the top.
+3. Commit all changes.
+4. Tag with `v<version>`.
+5. Push — the `release.yml` GitHub Action builds and uploads the zip.
+6. On the Legion Go S, open Settings → "Check for updates".
+
+---
+
 ## 2026-07-19 — v0.0.40: uinput proxy — gain/balance affects game rumble
 
 **Problem.** `EVIOCSGAIN` (v0.0.39) looked like it would make gain/balance

@@ -1,40 +1,43 @@
 """Haptic hardware adapters.
 
-The ``HapticBackend`` Protocol is the port; concrete implementations
-are devices (``InputPlumberAdapter`` for the Legion Go S today, future
-``SysfsAdapter`` / ``HidrawAdapter`` if other devices need them).
-
-Going through a Protocol keeps the service layer hardware-agnostic
-and lets us mock the backend in tests.
+Every backend implements the ``HapticBackend`` Protocol so the service
+layer can hot-swap between them at runtime without knowing the hardware
+details.
 """
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 
+@runtime_checkable
 class HapticBackend(Protocol):
-    """Minimal contract for a rumble backend.
+    """Contract for a rumble backend.
 
-    ``rumble(intensity, balance)``:
-      intensity: overall amplitude [0.0–1.0].
-      balance:   strong/weak motor split [0.0–1.0]; 0.5 = equal.
+    Each backend declares its identity and capabilities so the frontend
+    can render the right controls for the active mode.
 
-    ``set_kernel_gain(gain)``:
-      Forward the user's gain to the kernel-level ``FF_GAIN`` so game
-      rumble is also affected.  gain is [0.0–1.0]; backends that cannot
-      set a global gain should silently no-op.
-
-    ``set_balance(balance)``:
-      Store the strong/weak motor split so future intercepted FF effects
-      are adjusted.  Only meaningful for backends that intercept
-      per-effect (e.g. ``UinputProxy``).  Plain evdev backends no-op.
+    Feature flags
+    -------------
+    ``gain``       — frontend gain slider is supported.
+    ``balance``    — per-effect strong/weak motor split is supported.
+    ``game_gain``  — gain setting propagates to games, not just preview.
+    ``game_balance`` — balance setting propagates to games, not just preview.
     """
 
+    # ── identity ----------------------------------------------------------
+    @property
+    def id(self) -> str: ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def description(self) -> str: ...
+    @property
+    def features(self) -> frozenset[str]: ...
+
+    # ── actions -----------------------------------------------------------
     def rumble(self, intensity: float, balance: float = 0.5) -> None: ...
-
     def stop(self) -> None: ...
-
     def set_kernel_gain(self, gain: float) -> None: ...
-
     def set_balance(self, balance: float) -> None: ...
+    def close(self) -> None: ...

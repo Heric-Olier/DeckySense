@@ -168,7 +168,21 @@ _evdev = _EvdevFF()
 
 
 class InputPlumberAdapter(HapticBackend):
-    """Sends rumble via evdev (no D-Bus dependency)."""
+    """Sends rumble via evdev directly on the real gamepad device.
+
+    Gain/balance only affect the plugin's own preview — games' force-
+    feedback bypasses this path (they go through InputPlumber →
+    deck-uhid → Steam).
+    """
+
+    id = "inputplumber"
+    name = "D-Bus / Deck-UHID"
+    description = (
+        "Preview only. Gain and balance affect the plugin's own rumble "
+        "preview, but games send force-feedback through Steam Input and "
+        "ignore these settings. No system-level changes."
+    )
+    features = frozenset({"gain", "balance"})
 
     def rumble(self, intensity: float, balance: float = 0.5) -> None:
         clamped = max(0.0, min(float(intensity), 1.0))
@@ -181,4 +195,7 @@ class InputPlumberAdapter(HapticBackend):
         _evdev.set_kernel_gain(gain)
 
     def set_balance(self, balance: float) -> None:
-        pass  # Not applicable — EVIOCSGAIN is global, no per-effect control.
+        pass
+
+    def close(self) -> None:
+        _evdev.close()

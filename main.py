@@ -44,6 +44,10 @@ class Plugin:
 
     async def _unload(self) -> None:
         decky.logger.info("DeckySense backend stopping")
+        try:
+            get_gain_service().close_backend()
+        except Exception:  # noqa: BLE001
+            pass
 
     async def _uninstall(self) -> None:
         decky.logger.info("DeckySense uninstalled")
@@ -87,6 +91,19 @@ class Plugin:
 
     async def stop_rumble(self) -> dict[str, Any]:
         return await self.loop.run_in_executor(None, get_gain_service().stop)
+
+    # --- RPC: haptic backend management -----------------------------------
+
+    async def list_haptic_backends(self) -> list[dict[str, Any]]:
+        return get_gain_service().list_backends()
+
+    async def get_haptic_backend_info(self) -> dict[str, Any]:
+        return get_gain_service().get_backend_info()
+
+    async def switch_haptic_backend(self, backend_id: str) -> dict[str, Any]:
+        return await self.loop.run_in_executor(
+            None, get_gain_service().switch_backend, backend_id
+        )
 
     # --- RPC: debug ------------------------------------------------------
 
