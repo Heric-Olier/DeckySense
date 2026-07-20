@@ -179,3 +179,6 @@ class InputPlumberAdapter(HapticBackend):
 
     def set_kernel_gain(self, gain: float) -> None:
         _evdev.set_kernel_gain(gain)
+
+    def set_balance(self, balance: float) -> None:
+        pass  # Not applicable — EVIOCSGAIN is global, no per-effect control.

@@ -20,7 +20,7 @@ from typing import Any, Optional
 import decky
 
 from ..adapters import HapticBackend
-from ..adapters.inputplumber_adapter import InputPlumberAdapter
+from ..adapters.uinput_proxy import UinputProxy
 from ..domain import DEFAULT_BALANCE, DEFAULT_GAIN, HapticParams
 
 SETTING_KEY_GAIN = "haptic.gain"
@@ -50,10 +50,25 @@ class GainService:
     """Single-instance service that owns haptic params."""
 
     def __init__(self, backend: Optional[HapticBackend] = None) -> None:
-        self._backend: HapticBackend = backend or InputPlumberAdapter()
+        if backend is None:
+            backend = self._default_backend()
+        self._backend: HapticBackend = backend
         self._params: HapticParams = HapticParams(
             gain=DEFAULT_GAIN, balance=DEFAULT_BALANCE
         )
+
+    @staticmethod
+    def _default_backend() -> HapticBackend:
+        """Try UinputProxy first (full gain/balance support); fall back to evdev."""
+        try:
+            return UinputProxy()
+        except Exception:  # noqa: BLE001
+            decky.logger.warning(
+                "UinputProxy init failed, falling back to InputPlumberAdapter",
+                exc_info=True,
+            )
+        from ..adapters.inputplumber_adapter import InputPlumberAdapter  # noqa: PLC0415
+        return InputPlumberAdapter()
 
     def load_from_settings(self) -> None:
         stored_gain = _read_setting(SETTING_KEY_GAIN, DEFAULT_GAIN)
@@ -71,6 +86,10 @@ class GainService:
             self._backend.set_kernel_gain(min(1.0, self._params.gain))
         except Exception:  # noqa: BLE001
             pass
+        try:
+            self._backend.set_balance(self._params.balance)
+        except Exception:  # noqa: BLE001
+            pass
 
     def get_params(self) -> dict[str, Any]:
         return {"gain": self._params.gain, "balance": self._params.balance}
@@ -80,9 +99,6 @@ class GainService:
             gain=float(value), balance=self._params.balance
         ).clamped()
         _write_setting(SETTING_KEY_GAIN, self._params.gain)
-        # Forward to kernel-level FF_GAIN so game rumble is also
-        # attenuated. Kernel maxes out at 1.0; values > 1.0 only
-        # affect the plugin's own preview effects.
         try:
             self._backend.set_kernel_gain(min(1.0, self._params.gain))
         except Exception:  # noqa: BLE001
@@ -94,6 +110,10 @@ class GainService:
             gain=self._params.gain, balance=float(value)
         ).clamped()
         _write_setting(SETTING_KEY_BALANCE, self._params.balance)
+        try:
+            self._backend.set_balance(self._params.balance)
+        except Exception:  # noqa: BLE001
+            pass
         return self.get_params()
 
     def preview(self, raw_intensity: float = 0.5) -> dict[str, Any]:
