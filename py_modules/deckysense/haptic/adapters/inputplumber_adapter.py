@@ -1,10 +1,7 @@
-"""InputPlumber D-Bus + evdev force-feedback adapter for the Lenovo Legion Go S.
+"""Evdev force-feedback adapter for the Lenovo Legion Go S.
 
-Primary path: D-Bus via ``gdbus`` talking to InputPlumber's
-``org.shadowblip.Output.ForceFeedback.Rumble(double)`` on the composite device.
-
-Fallback path: evdev ``EVIOCSFF`` + ``EV_FF`` ioctls directly on the native
-gamepad event device. This bypasses polkit entirely.
+Uses ``EVIOCSFF`` + ``EV_FF`` ioctls directly on the native gamepad event
+device. This bypasses polkit and D-Bus entirely.
 """
 
 from __future__ import annotations
@@ -12,15 +9,8 @@ from __future__ import annotations
 import fcntl
 import os
 import struct
-import subprocess
 
 from . import HapticBackend
-
-# ── D-Bus constants ────────────────────────────────────────────────
-
-DBUS_SERVICE = "org.shadowblip.InputPlumber"
-DBUS_PATH = "/org/shadowblip/InputPlumber/CompositeDevice0"
-DBUS_INTERFACE = "org.shadowblip.Output.ForceFeedback"
 
 # ── evdev constants ────────────────────────────────────────────────
 
@@ -121,38 +111,7 @@ class _EvdevFF:
             self._effect_id = None
 
 
-# ── D-Bus helper (tried first) ────────────────────────────────────
-
-
-def _build_env() -> dict[str, str]:
-    """Build the gdbus subprocess env: inherit parent, strip problem vars."""
-    env = dict(os.environ)
-    env.pop("LD_LIBRARY_PATH", None)
-    for key in list(env):
-        if key.startswith("_PYI_"):
-            del env[key]
-    env["USER"] = "deck"
-    env["HOME"] = "/home/deck"
-    env["INSECURE_DISABLE_POLKIT"] = "1"
-    return env
-
-
-def _run_gdbus(cmd: list[str]) -> subprocess.CompletedProcess:
-    """Run gdbus and return the result. Never raises."""
-    try:
-        return subprocess.run(
-            cmd,
-            env=_build_env(),
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-    except FileNotFoundError:
-        result = subprocess.CompletedProcess(cmd, -1, "", "gdbus not found")
-        return result
-
-
-# ── Module-level evdev fallback ─────────────────────────────────────
+# ── Module-level evdev singleton ─────────────────────────────────────
 
 _evdev = _EvdevFF()
 
@@ -161,36 +120,11 @@ _evdev = _EvdevFF()
 
 
 class InputPlumberAdapter(HapticBackend):
-    """Sends rumble to the Legion Go S via gdbus D-Bus or evdev fallback."""
+    """Sends rumble via evdev (no D-Bus dependency)."""
 
     def rumble(self, intensity: float) -> None:
         clamped = max(0.0, min(float(intensity), 1.0))
-        self._call(clamped)
+        _evdev.rumble(clamped)
 
     def stop(self) -> None:
         _evdev.stop()
-
-    @staticmethod
-    def _call(intensity: float) -> None:
-        cmd = [
-            "/usr/bin/gdbus",
-            "call",
-            "--system",
-            "--dest",
-            DBUS_SERVICE,
-            "--object-path",
-            DBUS_PATH,
-            "--method",
-            f"{DBUS_INTERFACE}.Rumble",
-            str(intensity),
-        ]
-        result = _run_gdbus(cmd)
-        if result.returncode == 0:
-            return
-
-        err = (result.stderr or result.stdout or "").lower()
-        if "not authorized" in err:
-            _evdev.rumble(intensity)
-            return
-
-        raise RuntimeError(f"gdbus exit {result.returncode}: {result.stderr.strip()}")
