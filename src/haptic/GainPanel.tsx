@@ -21,24 +21,28 @@ import {
   debugHapticTest,
 } from "../api";
 import { BackendCard } from "./BackendCard";
+import { LuRadio, LuZap, LuShuffle } from "react-icons/lu";
 
 const PREVIEW_INTENSITY = 0.5;
 
-/**
- * Haptic Studio — backend mode selector + gain/balance controls.
- *
- * The user picks a backend mode (three cards at the top), then adjusts
- * gain/balance.  Controls adapt: balance slider is only shown when the
- * active backend supports it.  A feature summary tells the user what
- * each mode can do.
- */
+const BACKEND_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
+  inputplumber: LuRadio,
+  ff_gain: LuZap,
+  uinput_proxy: LuShuffle,
+};
+
+const FEATURE_LABELS: Record<string, string> = {
+  gain: "Preview gain",
+  balance: "Preview balance",
+  game_gain: "Game gain",
+  game_balance: "Game balance",
+};
+
 export function GainPanel() {
-  // ── backend list ────────────────────────────────────────────────
   const [backends, setBackends] = useState<BackendInfo[]>([]);
   const [activeBackend, setActiveBackend] = useState<BackendInfo | null>(null);
   const [switching, setSwitching] = useState(false);
 
-  // ── gain/balance ────────────────────────────────────────────────
   const [gain, setGain] = useState(1.0);
   const [balance, setBalance] = useState(0.5);
   const [previewing, setPreviewing] = useState(false);
@@ -46,7 +50,6 @@ export function GainPanel() {
   const [debug, setDebug] = useState<string | null>(null);
   const stopTimeoutRef = useRef<number | null>(null);
 
-  // Load everything on mount
   useEffect(() => {
     void (async () => {
       const [bList, active, params] = await Promise.all([
@@ -65,8 +68,6 @@ export function GainPanel() {
       }
     };
   }, []);
-
-  // ── helpers ─────────────────────────────────────────────────────
 
   const hasFeature = (f: string) => activeBackend?.features.includes(f) ?? false;
 
@@ -129,72 +130,64 @@ export function GainPanel() {
     setPreviewing(false);
   };
 
-  // ── render ──────────────────────────────────────────────────────
-
   return (
     <PanelSection title="Haptic Studio">
-      {/* Mode selector */}
+      {/* Backend chip selector */}
       <PanelSectionRow>
         <Focusable
           style={{
             display: "flex",
-            gap: "6px",
-            marginBottom: "8px",
+            gap: 6,
           }}
         >
-          {backends.map((b) => (
-            <BackendCard
-              key={b.id}
-              backend={b}
-              active={b.id === activeBackend?.id}
-              onSelect={onBackendSelect}
-            />
-          ))}
+          {backends.map((b) => {
+            const Icon = BACKEND_ICONS[b.id] ?? LuRadio;
+            return (
+              <BackendCard
+                key={b.id}
+                backend={b}
+                active={b.id === activeBackend?.id}
+                onSelect={onBackendSelect}
+                icon={Icon}
+              />
+            );
+          })}
         </Focusable>
       </PanelSectionRow>
 
-      {/* Feature summary for the active backend */}
+      {/* Description + feature badges */}
       {activeBackend && (
         <PanelSectionRow>
           <div
             style={{
-              display: "flex",
-              gap: "8px",
               fontSize: "0.7em",
-              opacity: 0.7,
-              padding: "0 2px 8px",
-              flexWrap: "wrap",
+              lineHeight: 1.4,
+              opacity: 0.65,
+              padding: "2px 0 6px",
             }}
           >
-            <span>
-              Preview gain:{" "}
-              <span style={{ fontWeight: 600 }}>
-                {hasFeature("gain") ? "[YES]" : "[NO]"}
+            {activeBackend.description}
+          </div>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {activeBackend.features.map((f) => (
+              <span
+                key={f}
+                style={{
+                  fontSize: "0.6em",
+                  padding: "1px 5px",
+                  borderRadius: 3,
+                  background: "rgba(255,255,255,0.08)",
+                  opacity: 0.75,
+                }}
+              >
+                {FEATURE_LABELS[f] ?? f}
               </span>
-            </span>
-            <span>
-              Preview balance:{" "}
-              <span style={{ fontWeight: 600 }}>
-                {hasFeature("balance") ? "[YES]" : "[NO]"}
-              </span>
-            </span>
-            <span>
-              Game gain:{" "}
-              <span style={{ fontWeight: 600 }}>
-                {hasFeature("game_gain") ? "[YES]" : "[NO]"}
-              </span>
-            </span>
-            <span>
-              Game balance:{" "}
-              <span style={{ fontWeight: 600 }}>
-                {hasFeature("game_balance") ? "[YES]" : "[NO]"}
-              </span>
-            </span>
+            ))}
           </div>
         </PanelSectionRow>
       )}
 
-      {/* Gain slider (always shown) */}
+      {/* Gain slider */}
       <PanelSectionRow>
         <SliderField
           label="Gain"
@@ -203,7 +196,7 @@ export function GainPanel() {
           max={2}
           step={0.05}
           onChange={onGainChange}
-          description={`${gain.toFixed(2)}× multiplier`}
+          description={`${gain.toFixed(2)}x`}
         />
       </PanelSectionRow>
 
@@ -219,9 +212,9 @@ export function GainPanel() {
             onChange={onBalanceChange}
             description={
               balance < 0.33
-                ? "Light / buzzy"
+                ? "Light"
                 : balance > 0.66
-                  ? "Deep / heavy"
+                  ? "Heavy"
                   : "Balanced"
             }
           />
@@ -233,7 +226,7 @@ export function GainPanel() {
         <ButtonItem layout="below" onClick={previewing ? onStop : onPreview}>
           {previewing
             ? "Stop preview"
-            : `Preview at ${(PREVIEW_INTENSITY * gain).toFixed(2)} intensity`}
+            : `Preview at ${(PREVIEW_INTENSITY * gain).toFixed(2)}`}
         </ButtonItem>
       </PanelSectionRow>
 
@@ -248,7 +241,6 @@ export function GainPanel() {
         </PanelSectionRow>
       )}
 
-      {/* Debug */}
       <PanelSectionRow>
         <ButtonItem
           layout="below"
@@ -257,7 +249,7 @@ export function GainPanel() {
             setDebug(JSON.stringify(r, null, 2));
           }}
         >
-          Run haptic debug
+          Haptic debug
         </ButtonItem>
       </PanelSectionRow>
       {debug && (
@@ -267,8 +259,8 @@ export function GainPanel() {
               whiteSpace: "pre-wrap",
               margin: 0,
               background: "rgba(255,255,255,0.05)",
-              padding: "8px",
-              borderRadius: "4px",
+              padding: 8,
+              borderRadius: 4,
               fontSize: "0.8em",
             }}
           >
