@@ -8,6 +8,75 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-07-19 — v0.0.40: uinput proxy — gain/balance affects game rumble
+
+**Problem.** `EVIOCSGAIN` (v0.0.39) looked like it would make gain/balance
+work for all rumble on the device, but the `hid-lenovo-go-s` driver does
+not implement `set_gain`. Games' force-feedback effects completely
+ignored our settings — only the plugin's own preview was affected.
+
+**Solution: uinput proxy device.** Instead of writing to the real
+evdev device directly, `UinputProxy` (`adapters/uinput_proxy.py`):
+
+1. Opens the real gamepad (`EVIOCGRAB` to get exclusive access).
+2. Queries its capabilities (name, vendor/product IDs, supported keys/
+   rel/abs axes, abs min/max/fuzz/flat ranges).
+3. Creates a virtual `/dev/input/event*` device via uinput, mirroring
+   the real device's capabilities (including proper ABS ranges so
+   analog sticks work).
+4. Spawns a reader thread that polls both fds — forwards input events
+   from real → virtual, and intercepts force-feedback upload/erase
+   requests from virtual ← kernel.
+5. On `EVIOCSFF` (FF upload): parses `struct uinput_ff_upload`, applies
+   gain + balance multipliers to `strong_magnitude`/`weak_magnitude`,
+   forwards the modified effect to the real device, and returns the
+   real effect id to the game.
+
+**Key design decisions.**
+
+- **Grab is required.** Without `EVIOCGRAB` the kernel delivers events
+  to both the real device (consumed by Steam Input) and the proxy,
+  causing double-input. Grab routes everything through the proxy.
+  Danger: if the proxy crashes, the gamepad is stuck until a reboot or
+  manual `EVIOCGRAB 0`. The `close()` method issues an ungrab.
+- **Size-based FF detection.** The kernel writes raw `uinput_ff_upload`
+  (104 bytes) or `uinput_ff_erase` (12 bytes) structs to the uinput fd.
+  We distinguish them by read size, not by a bit-31 flag (which was
+  incorrect in the draft).
+- **Preview uses real fd directly.** Plugin preview bypasses the proxy
+  and writes directly to the real fd (`_play_effect`), reusing the same
+  effect-slot-freeing pattern from v0.0.38 to avoid `ENOSPC`.
+- **Fallback.** If uinput init fails (no `/dev/uinput`, no gamepad), the
+  service falls back to the plain evdev `InputPlumberAdapter`.
+
+**Files changed (v0.0.35–v0.0.40).**
+
+- `py_modules/deckysense/haptic/adapters/uinput_proxy.py` — new, ~545
+  lines. The entire proxy device.
+- `py_modules/deckysense/haptic/adapters/__init__.py` — added
+  `set_balance` to `HapticBackend` protocol.
+- `py_modules/deckysense/haptic/adapters/inputplumber_adapter.py` —
+  added `set_balance()` as no-op.
+- `py_modules/deckysense/haptic/services/gain_service.py` — default
+  backend changed from `InputPlumberAdapter` to `UinputProxy` (with
+  fallback); `set_balance` now propagates to backend.
+- `py_modules/deckysense/haptic/domain.py` — added `balance` field to
+  `HapticParams` (v0.0.37).
+- `main.py` — RPC methods `set_haptic_gain`, `set_haptic_balance`,
+  `preview_rumble`, `stop_rumble`.
+- `src/haptic/GainPanel.tsx` — UI for gain + balance sliders with live
+  preview (v0.0.37).
+
+**What's still missing.**
+
+- If `EVIOCGRAB` breaks Steam Input (e.g. Steam loses track of the
+  original device), we may need a mode that *forwards* the hidraw
+  instead of grabbing.
+- `set_kernel_gain` is kept for backward compat but is a no-op on the
+  proxy backend (gain is applied per-effect now).
+
+---
+
 ## 2026-07-17 — v0.0.3: shoulder nav, marquee/alert, gain slider with live preview
 
 Closes Phase 4 (auto-update + core UX shell) and lands the first
