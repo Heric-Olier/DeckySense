@@ -70,6 +70,27 @@ export const switchHapticBackend = callable<[backendId: string], BackendInfo>(
   "switch_haptic_backend"
 );
 
+// --- System status -----------------------------------------------------
+
+export interface ControllerInfo {
+  mode: string | null;
+  os_mode: string | null;
+  sysfs: string | null;
+}
+
+export interface SystemStatus {
+  plugin_version: string;
+  controller: ControllerInfo;
+  ff_enabled: boolean | null;
+  backend: BackendInfo;
+}
+
+export const getSystemStatus = callable<[], SystemStatus>("get_system_status");
+export const setFfEnabled = callable<
+  [value: boolean],
+  { enabled: boolean | null }
+>("set_ff_enabled");
+
 // --- Debug ---
 
 export interface DebugInfo {

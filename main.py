@@ -18,6 +18,7 @@ from typing import Any
 
 import decky
 
+from deckysense.haptic.services import status_service
 from deckysense.haptic.services.gain_service import get_gain_service
 from deckysense.updater import self_updater
 from deckysense.version import read_version
@@ -106,6 +107,31 @@ class Plugin:
     async def switch_haptic_backend(self, backend_id: str) -> dict[str, Any]:
         return await self.loop.run_in_executor(
             None, get_gain_service().switch_backend, backend_id
+        )
+
+    # --- RPC: system status ------------------------------------------------
+
+    async def get_system_status(self) -> dict[str, Any]:
+        """Controller input mode, FF enabled flag, backend and version.
+
+        Read-only snapshot for the Haptic tab status panel. All fields
+        are fail-safe: missing data comes back as null and the UI shows
+        "unknown" instead of failing.
+        """
+        return await self.loop.run_in_executor(None, self._build_system_status)
+
+    def _build_system_status(self) -> dict[str, Any]:
+        return {
+            "plugin_version": read_version(),
+            "controller": status_service.get_controller_info(),
+            "ff_enabled": status_service.get_ff_enabled(),
+            "backend": get_gain_service().get_backend_info(),
+        }
+
+    async def set_ff_enabled(self, value: bool) -> dict[str, Any]:
+        """Enable/disable InputPlumber force feedback; returns read-back."""
+        return await self.loop.run_in_executor(
+            None, status_service.set_ff_enabled, value
         )
 
     # --- RPC: debug ------------------------------------------------------

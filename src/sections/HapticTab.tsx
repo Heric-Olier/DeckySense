@@ -1,5 +1,11 @@
 import { GainPanel } from "../haptic/GainPanel";
+import { MotorStatusPanel } from "../haptic/MotorStatusPanel";
 
 export function HapticTab() {
-  return <GainPanel />;
+  return (
+    <>
+      <MotorStatusPanel />
+      <GainPanel />
+    </>
+  );
 }

@@ -8,6 +8,41 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-10-08 — v0.0.45: Motor status panel (FF toggle, live controller mode)
+
+Second increment of the resume day. The Haptic tab gets a status
+header so the user can see the stack's real state at a glance — and a
+new working control.
+
+**Backend.**
+
+- `py_modules/deckysense/haptic/services/status_service.py` — fail-safe
+  reads: controller input mode from hid-lenovo-go-s sysfs
+  (`gamepad/mode`, `os_mode`) and the InputPlumber FF `Enabled` flag
+  over D-Bus. `set_ff_enabled()` writes the property as a GVariant
+  (`<true>`/`<false>` — plain `true`/`false` fails to parse as type
+  `v`) and returns the read-back state, not the request.
+- `main.py` — RPCs `get_system_status` and `set_ff_enabled`.
+
+**Frontend.**
+
+- `src/haptic/MotorStatusPanel.tsx` — "Motor" section: plugin version,
+  active backend, controller mode (XInput/DInput), the system-rumble
+  toggle (InputPlumber FF) with the #706 warning in its description,
+  and the firmware-level guide (Legion L + D-pad ↑/↓, honestly marked
+  as unverified on SteamOS).
+- `src/sections/HapticTab.tsx` — mounts MotorStatusPanel above GainPanel.
+
+**Validation.**
+
+- `status_service.py` ran unmodified on the Legion (stubbed logger):
+  mode read `xinput`/`os_mode=linux`; FF `false`→read-back `false`,
+  `true`→read-back `true`. The toggle was exercised live and restored.
+- Fail-safe path exercised locally (no controller, no D-Bus service):
+  all fields return None without raising.
+
+---
+
 ## 2026-10-08 — v0.0.44: updater v2 (Panel de Control port) + project resumed
 
 **Context.** DeckySense is resumed after a ~2.5-month pause. Before any
