@@ -1,52 +1,61 @@
 """DeckySense self-updater.
 
-Pulls new releases from the project's GitHub repo and installs them
-through Decky's plugin loader. Pattern adapted from Panel de Control.
+Checks GitHub releases and installs the latest zip in place, then asks
+Decky's plugin loader to restart so the new code takes effect.
 
-Design rules
-------------
-- Public functions never raise; they return a status dict that the
-  frontend renders uniformly, including the error state.
-- ``check()`` is session-cached so multiple consumers (the panel and
-  the AlertDot on the tab icon) share state without re-fetching.
-- The ``systemctl restart plugin_loader`` call hides Decky's bundled
-  libcrypto so systemctl can load the system OpenSSL.
-- Plugin root is derived from ``__file__``, not ``decky.DECKY_PLUGIN_DIR``,
-  because the latter can be unreliable depending on how Decky initialises
-  the Python environment.
+Pattern ported from Panel de Control (proven across ~120 releases):
+
+- Every public function NEVER raises — it returns a status dict so the
+  UI renders a message instead of hanging on a spinner.
+- ``_operation_lock`` serialises check/install (the panel, the modal and
+  the tab badge can all fire calls at once).
+- ``install()`` stages the download in a temp dir, restores the unix
+  permission bits recorded in the zip (plain ``extractall()`` drops
+  them), then copies item-by-item OVER the installed plugin dir — the
+  directory is never replaced, so imports and ``sys.path`` stay intact.
+  Settings live in ``DECKY_PLUGIN_SETTINGS_DIR`` and are untouched.
+- ``restart_loader()`` sanitises ``LD_LIBRARY_PATH`` before calling
+  systemctl (Decky's PyInstaller build points it at a bundled libcrypto
+  and systemctl fails with "OPENSSL_x not found" otherwise).
+
+Repo-specific values are read at runtime, so the module stays a single
+source of truth:
+  - GitHub repo slug = ``package.json`` "name"   (Heric-Olier/deckysense)
+  - zip / dir name   = ``plugin.json`` "name"    ("DeckySense")
 """
 
 from __future__ import annotations
 
 import json
 import os
-import random
 import re
 import shutil
-import ssl
-import string
-import subprocess
 import tempfile
-import time
-import traceback
+import threading
 import urllib.error
 import urllib.request
 import zipfile
-from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import decky
 
-# ── Plugin identity ────────────────────────────────────────────────
-# Derived from __file__ so the updater works even when decky.DECKY_PLUGIN_DIR
-# is unreliable (e.g. PyInstaller builds, certain Decky versions).
-# Layout:  py_modules/deckysense/updater/self_updater.py
-#            ▲         ▲       ▲
-#            3         2       1  ← .parent calls to reach plugin root
+from deckysense.http_util import ssl_context
+from deckysense.version import read_version
+
+_GITHUB_OWNER = "Heric-Olier"
+_UA = "decky-self-updater"
+
+# Session cache: only hit GitHub once per plugin process (force=True bypasses it).
+_cache: dict[str, Any] | None = None
+_operation_lock = threading.RLock()
 
 
-def _plugin_root() -> Path:
+# ── Identity helpers ───────────────────────────────────────────────
+
+
+def _plugin_dir() -> Path:
+    # Layout: py_modules/deckysense/updater/self_updater.py -> plugin root.
     return Path(__file__).resolve().parent.parent.parent.parent
 
 
@@ -57,21 +66,12 @@ def _read_json(path: Path) -> dict[str, Any]:
         return {}
 
 
-_PLUGIN_ROOT = _plugin_root()
-_PKG = _read_json(_PLUGIN_ROOT / "package.json")
-_PLUGIN_JSON = _read_json(_PLUGIN_ROOT / "plugin.json")
+def _repo_slug() -> str:
+    return str(_read_json(_plugin_dir() / "package.json").get("name", ""))
 
-PLUGIN_NAME: str = _PKG.get("name", "deckysense")
-CURRENT_VERSION: str = _PKG.get("version", "0.0.0")
 
-GITHUB_OWNER: str = "Heric-Olier"
-GITHUB_REPO: str = "DeckySense"
-RELEASES_URL: str = (
-    f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
-)
-
-# Session cache: only hit GitHub once per plugin process (force=True bypasses it).
-_cache: dict[str, Any] = {}
+def _plugin_name() -> str:
+    return str(_read_json(_plugin_dir() / "plugin.json").get("name", ""))
 
 
 # ── Version helpers ────────────────────────────────────────────────
@@ -96,64 +96,93 @@ def _is_newer(latest: str, current: str) -> bool:
     return _norm(latest) > _norm(current)
 
 
-# ── SSL context (same approach as Panel de Control) ────────────────
-
-_CA_BUNDLES = (
-    "/etc/ssl/certs/ca-certificates.crt",
-    "/etc/ssl/cert.pem",
-    "/etc/pki/tls/certs/ca-bundle.crt",
-    "/etc/ssl/ca-bundle.pem",
-)
-
-
-def _build_ssl_context() -> ssl.SSLContext:
-    """Load the system CA bundle explicitly.
-
-    Decky's PyInstaller environment can ship without a usable CA bundle
-    or set ``SSL_CERT_FILE`` to a broken path, which makes
-    ``ssl.create_default_context()`` produce a context that can't verify
-    GitHub's cert. Walk known CA paths and load whichever exists.
-    """
-    ctx = ssl.create_default_context()
-    for path in _CA_BUNDLES:
-        if os.path.exists(path):
-            try:
-                ctx.load_verify_locations(path)
-            except Exception:
-                continue
-            break
-    return ctx
-
-
-_SSL_CONTEXT = _build_ssl_context()
-
-_UA = "decky-self-updater"
+# ── HTTP ───────────────────────────────────────────────────────────
 
 
 def _http_get(url: str, accept: str) -> bytes:
     req = urllib.request.Request(
         url, headers={"User-Agent": _UA, "Accept": accept}
     )
-    with urllib.request.urlopen(req, timeout=15, context=_SSL_CONTEXT) as resp:
+    with urllib.request.urlopen(req, timeout=15, context=ssl_context()) as resp:  # noqa: S310
         return resp.read()
 
 
-# ── Status shape ───────────────────────────────────────────────────
+# ── Release shaping ────────────────────────────────────────────────
 
 
-@dataclass
-class UpdateStatus:
-    """Status surface returned to the frontend."""
+def _find_asset(data: dict[str, Any], latest: str) -> str:
+    """Locate the release zip.
 
-    state: str  # idle | checking | available | up_to_date | installing | done | error
-    current_version: str
-    latest_version: Optional[str] = None
-    release_notes: Optional[str] = None
-    asset_url: Optional[str] = None
-    error: Optional[str] = None
+    The release workflow uploads ``deckysense-v<version>.zip`` (built by
+    ``scripts/package.sh``). Prefer the asset whose name carries the
+    latest version; fall back to any zip named after the plugin.
+    """
+    name = _plugin_name().lower()
+    if not name:
+        return ""
+    fallback = ""
+    for asset in data.get("assets") or []:
+        aname = str(asset.get("name", "")).lower()
+        if not aname.endswith(".zip") or name not in aname:
+            continue
+        url = str(asset.get("browser_download_url", ""))
+        if latest and latest in aname:
+            return url  # exact version match wins
+        fallback = fallback or url
+    return fallback
 
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+
+def _shape(data: dict[str, Any], current: str) -> dict[str, Any]:
+    """Turn a GitHub 'releases/latest' payload into the UpdateInfo dict."""
+    latest = _extract_semver(str(data.get("tag_name", "")))
+    notes = str(data.get("body", "") or "")
+    download_url = _find_asset(data, latest)
+    return {
+        "current": current,
+        "latest": latest or current,
+        "notes": notes,
+        "download_url": download_url,
+        "has_update": bool(latest) and bool(download_url) and _is_newer(latest, current),
+        "error": "",
+    }
+
+
+def _release_notes(data: list[dict[str, Any]], current: str, latest: str) -> str:
+    """Aggregate the notes of every release between current and latest.
+
+    The update modal then shows everything the user missed, newest first.
+    """
+    releases: dict[str, dict[str, Any]] = {}
+    for release in data:
+        if not isinstance(release, dict) or release.get("draft") or release.get("prerelease"):
+            continue
+        version = _extract_semver(str(release.get("tag_name", "")))
+        if version and _is_newer(version, current) and not _is_newer(version, latest):
+            releases.setdefault(version, release)
+
+    notes: list[str] = []
+    for version in sorted(releases, key=_norm, reverse=True):
+        release = releases[version]
+        body = str(release.get("body", "") or "").strip()
+        notes.append(f"## v{version}" + (f"\n\n{body}" if body else ""))
+    return "\n\n".join(notes)
+
+
+def _fetch_releases(slug: str) -> list[dict[str, Any]]:
+    releases: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        api = (
+            f"https://api.github.com/repos/{_GITHUB_OWNER}/{slug}/releases"
+            f"?per_page=100&page={page}"
+        )
+        batch = json.loads(_http_get(api, "application/vnd.github+json"))
+        if not isinstance(batch, list):
+            raise ValueError("unexpected releases response")
+        releases.extend(batch)
+        if len(batch) < 100:
+            return releases
+        page += 1
 
 
 # ── Public API ─────────────────────────────────────────────────────
@@ -162,161 +191,129 @@ class UpdateStatus:
 def check(force: bool = False) -> dict[str, Any]:
     """Query GitHub for the latest release. Cached per session.
 
-    Pass ``force=True`` to bypass the cache (used by the manual
-    "Check for updates" button).
+    Never raises: returns the UpdateInfo dict with an ``error`` code on
+    failure. Pass ``force=True`` to bypass the cache (manual button).
     """
     global _cache
-    if _cache and not force:
-        return _cache
+    with _operation_lock:
+        if _cache is not None and not force:
+            return _cache
 
-    status = UpdateStatus(state="checking", current_version=CURRENT_VERSION)
-    try:
-        data = json.loads(_http_get(RELEASES_URL, "application/vnd.github+json"))
+        current = read_version()
+        empty: dict[str, Any] = {
+            "current": current,
+            "latest": current,
+            "notes": "",
+            "download_url": "",
+            "has_update": False,
+            "error": "",
+        }
+        result = empty
+        latest_loaded = False
+        try:
+            slug = _repo_slug()
+            latest_api = f"https://api.github.com/repos/{_GITHUB_OWNER}/{slug}/releases/latest"
+            latest_data = json.loads(_http_get(latest_api, "application/vnd.github+json"))
+            latest_loaded = True
+            result = _shape(latest_data, current)
+            if result["has_update"]:
+                releases = [latest_data, *_fetch_releases(slug)]
+                result["notes"] = _release_notes(releases, current, result["latest"])
+        except urllib.error.HTTPError as e:
+            if e.code == 404 and not latest_loaded:
+                decky.logger.info("[updater] no published release yet")
+            else:
+                decky.logger.warning(f"[updater] check failed: {e}")
+                result = {**empty, "error": "network"}
+        except Exception as e:  # noqa: BLE001 — must never propagate to the UI
+            decky.logger.warning(f"[updater] check failed: {e}")
+            result = {**empty, "error": "network"}
+        _cache = result
+        return result
 
-        latest = _extract_semver(str(data.get("tag_name", "")))
-        status.latest_version = latest or CURRENT_VERSION
-        status.release_notes = str(data.get("body", "") or "")
 
-        # Asset naming in the release workflow: out/<name>-v<version>.zip
-        # e.g. "deckysense-v0.0.15.zip". Match any zip whose name contains
-        # the plugin name and the latest semver tag.
-        name_candidate = _PLUGIN_JSON.get("name", PLUGIN_NAME).lower()
-        tag_version = latest  # e.g. "0.0.15"
-        asset_url: Optional[str] = None
-        for asset in data.get("assets") or []:
-            aname = (asset.get("name") or "").lower()
-            if aname.endswith(".zip") and name_candidate in aname and tag_version in aname:
-                asset_url = asset.get("browser_download_url")
-                break
-        status.asset_url = asset_url
+def _extract_zip(zf: zipfile.ZipFile, dest: Path) -> None:
+    """Extract preserving the unix permission bits the archive records.
 
-        status.state = (
-            "available"
-            if latest and asset_url and _is_newer(latest, CURRENT_VERSION)
-            else "up_to_date"
-        )
-
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            decky.logger.info("[updater] no published release yet")
-            status.state = "up_to_date"
-        else:
-            decky.logger.warning(f"[updater] check failed: {exc}")
-            status.state = "error"
-            status.error = "network"
-    except Exception as exc:  # noqa: BLE001 — surface as status, never raise.
-        decky.logger.warning(f"[updater] check failed: {exc}")
-        status.state = "error"
-        status.error = "network"
-
-    result = status.to_dict()
-    _cache = result
-    return result
+    Plain ``extractall()`` drops them, so a bundled executable would land
+    non-executable and fail to run. A zip with no recorded mode
+    (``external_attr`` high bits == 0) keeps the default extract.
+    """
+    for info in zf.infolist():
+        out = zf.extract(info, dest)
+        # Low 9 bits only (rwx for u/g/o); never carry setuid/setgid/sticky.
+        mode = (info.external_attr >> 16) & 0o777
+        if mode:
+            os.chmod(out, mode)
 
 
 def install() -> dict[str, Any]:
-    """Download the latest release zip and overwrite the plugin dir.
+    """Download the latest release zip and overwrite the installed dir.
 
-    Never raises: returns a status dict with error codes on failure.
+    Returns ``{ok, needs_restart, message}``. Never raises.
     """
-    info = check()
-    url = str(info.get("asset_url") or "")
-    if not url:
-        return UpdateStatus(
-            state="error",
-            current_version=CURRENT_VERSION,
-            error="no_asset",
-        ).to_dict()
-
-    status = UpdateStatus(
-        state="installing",
-        current_version=CURRENT_VERSION,
-        latest_version=str(info.get("latest_version", "")),
-        asset_url=url,
-    )
-
-    try:
-        blob = _http_get(url, "application/octet-stream")
-
-        with tempfile.TemporaryDirectory() as tmp:
-            tmpd = Path(tmp)
-            zpath = tmpd / "update.zip"
-            zpath.write_bytes(blob)
-
-            extract = tmpd / "x"
-            with zipfile.ZipFile(zpath) as zf:
-                zf.extractall(extract)
-
-            src = extract / PLUGIN_NAME
-            if not src.is_dir():
-                src = extract / _PLUGIN_JSON.get("name", "")
-            if not src.is_dir():
-                subdirs = [p for p in extract.iterdir() if p.is_dir()]
-                if len(subdirs) == 1:
-                    src = subdirs[0]
-            if not src.is_dir():
-                raise RuntimeError("bad_zip: no plugin folder found")
-
-            # Try 1 — in-place copy (Panel de Control style). Works if plugin
-            # files belong to deck (after first successful sudo chown).
-            try:
+    with _operation_lock:
+        info = check()
+        url = str(info.get("download_url") or "")
+        if not info.get("has_update") or not url:
+            return {"ok": False, "needs_restart": False, "message": "no_asset"}
+        try:
+            plugin_dir = _plugin_dir()
+            name = _plugin_name()
+            blob = _http_get(url, "application/octet-stream")
+            with tempfile.TemporaryDirectory() as tmp:
+                tmpd = Path(tmp)
+                zpath = tmpd / "update.zip"
+                zpath.write_bytes(blob)
+                extract = tmpd / "x"
+                with zipfile.ZipFile(zpath) as zf:
+                    _extract_zip(zf, extract)
+                src = extract / name  # top folder == plugin.json name
+                if not src.is_dir():
+                    subdirs = [p for p in extract.iterdir() if p.is_dir()]
+                    if len(subdirs) == 1:
+                        src = subdirs[0]
+                if not src.is_dir():
+                    return {"ok": False, "needs_restart": False, "message": "bad_zip"}
+                # Copy over the installed plugin dir. User settings live in
+                # DECKY_PLUGIN_SETTINGS_DIR (outside this dir) and are untouched.
                 for item in src.iterdir():
-                    dest = _PLUGIN_ROOT / item.name
+                    dest = plugin_dir / item.name
                     if item.is_dir():
                         shutil.copytree(item, dest, dirs_exist_ok=True)
                     else:
                         shutil.copy2(item, dest)
-            except OSError:
-                decky.logger.info("[updater] in-place copy failed, trying staging swap")
-
-                # Try 2 — staging swap. Works if /home/deck/homebrew/plugins/
-                # is writable by deck (which it should be after chown).
-                suffix = "".join(random.choices(string.ascii_lowercase, k=8))
-                staging = _PLUGIN_ROOT.parent / f"{_PLUGIN_ROOT.name}.{suffix}"
-                try:
-                    shutil.copytree(src, staging)
-                except OSError:
-                    decky.logger.info("[updater] staging in plugins/ failed, trying /home/deck/")
-                    staging = Path("/home/deck") / f".deckysense_upd_{suffix}"
-                    shutil.copytree(src, staging)
-
-                backup = _PLUGIN_ROOT.parent / f"{_PLUGIN_ROOT.name}.bak.{int(time.time())}"
-                _PLUGIN_ROOT.rename(backup)
-                staging.rename(_PLUGIN_ROOT)
-
-        _mark_installed()
-        status.state = "done"
-
-    except Exception as exc:  # noqa: BLE001
-        tb = traceback.format_exc()
-        decky.logger.error(f"[updater] install failed: {exc}\n{tb}")
-        status.state = "error"
-        status.error = f"install_failed: {exc}"
-
-    return status.to_dict()
+            read_version.cache_clear()
+            _mark_installed()
+            return {"ok": True, "needs_restart": True, "message": "installed"}
+        except Exception as e:  # noqa: BLE001
+            decky.logger.error(f"[updater] install failed: {e}")
+            return {"ok": False, "needs_restart": False, "message": "install_failed"}
 
 
-def restart_loader() -> dict[str, Any]:
-    """Restart Decky's plugin loader so the new code takes effect."""
-    env = dict(os.environ)
-    # Decky's PyInstaller build points LD_LIBRARY_PATH at its bundled libs,
-    # which makes systemctl fail with "OPENSSL_x not found". Restore the
-    # pre-bundle path if available, otherwise drop LD_LIBRARY_PATH.
-    orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
-    if orig is not None:
-        env["LD_LIBRARY_PATH"] = orig
-    else:
-        env.pop("LD_LIBRARY_PATH", None)
+def restart_loader() -> None:
+    """Restart Decky to load the just-installed files.
+
+    Fire-and-forget: this call kills the current process. The
+    LD_LIBRARY_PATH sanitisation is what makes systemctl work at all
+    from inside Decky's PyInstaller environment.
+    """
     try:
-        subprocess.Popen(
+        import subprocess
+
+        env = dict(os.environ)
+        orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
+        if orig is not None:
+            env["LD_LIBRARY_PATH"] = orig
+        else:
+            env.pop("LD_LIBRARY_PATH", None)
+        subprocess.Popen(  # noqa: S603
             ["/usr/bin/systemctl", "restart", "plugin_loader"],
             env=env,
             start_new_session=True,
         )
-        return {"state": "restarting"}
-    except Exception as exc:  # noqa: BLE001
-        decky.logger.error(f"[updater] restart failed: {exc}")
-        return {"state": "error", "error": f"{type(exc).__name__}: {exc}"}
+    except Exception as e:  # noqa: BLE001
+        decky.logger.error(f"[updater] restart failed: {e}")
 
 
 def _mark_installed() -> None:
@@ -324,8 +321,6 @@ def _mark_installed() -> None:
     if _cache:
         _cache = {
             **_cache,
-            "current_version": _cache.get("latest_version", _cache.get("current_version")),
-            "state": "done",
+            "current": _cache.get("latest", _cache.get("current")),
+            "has_update": False,
         }
-    else:
-        _cache = {"state": "done", "current_version": CURRENT_VERSION}

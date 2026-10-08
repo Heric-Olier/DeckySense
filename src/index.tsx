@@ -18,9 +18,9 @@ function Content() {
   }, []);
 
   useShoulderNav({ ids: sectionIds, active, onSelect: setActive });
-  const { status } = useUpdate();
+  const { view } = useUpdate();
   const alerts: Record<string, boolean> = {
-    settings: status.state === "available",
+    settings: view.phase === "available",
   };
 
   const activeSection = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];

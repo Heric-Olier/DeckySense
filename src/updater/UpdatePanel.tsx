@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ButtonItem,
   PanelSection,
@@ -5,96 +6,94 @@ import {
   staticClasses,
 } from "@decky/ui";
 import { useUpdate } from "./useUpdate";
+import { UpdateModal } from "./UpdateModal";
 
 /**
- * Inline update flow: a single button whose label and action depend on
- * the current update state. No modal — fewer moving parts, less to
- * break in the narrow QAM width.
- *
- * - idle / error → "Check for updates" / "Update failed — retry"
- * - checking → disabled "Checking…"
- * - available → "Update to v<latest>" → install()
- * - installing → disabled "Installing…"
- * - done → "Installed. Restart." → restart()
- * - restarting → disabled "Restarting…"
+ * Inline update flow: one status line + one contextual button; the full
+ * notes/install flow lives in the modal. No progress bar — coarse states
+ * only, and the label always reflects exactly what the next click does.
  */
 export function UpdatePanel() {
-  const { status, check, install, restart } = useUpdate();
+  const { view, check, restart } = useUpdate();
+  const [modalOpen, setModalOpen] = useState(false);
+  const { phase, info, error } = view;
+  const current = info?.current ?? "";
 
-  const onButtonClick = async () => {
-    if (status.state === "available") {
-      await install();
-    } else if (status.state === "done") {
-      await restart();
-    } else if (status.state === "checking" || status.state === "installing" || status.state === "restarting") {
-      // No-op while a transition is in flight.
-      return;
-    } else {
-      await check(true);
-    }
-  };
-
-  const label = (() => {
-    switch (status.state) {
+  const statusLine = (() => {
+    switch (phase) {
       case "checking":
-        return "Checking…";
-      case "up_to_date":
-        return `Up to date (v${status.current_version})`;
+        return current ? `Version ${current} · checking…` : "Checking…";
       case "available":
-        return `Update to v${status.latest_version}`;
+        return `Version ${current} · new v${info?.latest} available`;
+      case "up_to_date":
+        return `Version ${current} · up to date`;
       case "installing":
         return "Installing…";
       case "done":
-        return "Installed. Restart.";
-      case "restarting":
-        return "Restarting…";
+        return "Update installed — restart Decky to apply";
       case "error":
-        return "Update failed — retry";
+        return "Update check failed";
+      default:
+        return current ? `Version ${current}` : "";
+    }
+  })();
+
+  const label = (() => {
+    switch (phase) {
+      case "checking":
+        return "Checking…";
+      case "available":
+        return `View v${info?.latest} notes & install`;
+      case "installing":
+        return "Installing…";
+      case "done":
+        return "Restart Decky";
       default:
         return "Check for updates";
     }
   })();
 
-  const isDisabled =
-    status.state === "checking" ||
-    status.state === "installing" ||
-    status.state === "restarting";
+  const disabled = phase === "checking" || phase === "installing";
+
+  const onButton = async () => {
+    if (phase === "available") {
+      setModalOpen(true);
+      return;
+    }
+    if (phase === "done") {
+      await restart();
+      return;
+    }
+    if (disabled) return;
+    await check(true);
+  };
 
   return (
     <PanelSection title="Updates">
       <PanelSectionRow>
-        <ButtonItem layout="below" disabled={isDisabled} onClick={onButtonClick}>
+        <div
+          className={staticClasses.Text}
+          style={{ opacity: 0.8, padding: "0 8px", fontSize: "0.9em" }}
+        >
+          {statusLine}
+        </div>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem layout="below" disabled={disabled} onClick={onButton}>
           {label}
         </ButtonItem>
       </PanelSectionRow>
-      {status.state === "error" && status.error && (
+      {phase === "error" && error && (
         <PanelSectionRow>
           <div
             className={staticClasses.Text}
-            style={{ opacity: 0.6, padding: "0 8px" }}
+            style={{ opacity: 0.6, padding: "0 8px", fontSize: "0.85em" }}
           >
-            {status.error}
+            {error === "network" ? "Could not reach GitHub. Try again." : error}
           </div>
         </PanelSectionRow>
       )}
-      {status.release_notes && status.state === "available" && (
-        <PanelSectionRow>
-          <pre
-            style={{
-              whiteSpace: "pre-wrap",
-              margin: 0,
-              maxHeight: "180px",
-              overflow: "auto",
-              background: "rgba(255,255,255,0.05)",
-              padding: "8px",
-              borderRadius: "4px",
-              fontSize: "0.85em",
-            }}
-          >
-            {status.release_notes}
-          </pre>
-        </PanelSectionRow>
-      )}
+      <UpdateModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </PanelSection>
   );
 }

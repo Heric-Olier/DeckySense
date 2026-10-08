@@ -20,6 +20,7 @@ import decky
 
 from deckysense.haptic.services.gain_service import get_gain_service
 from deckysense.updater import self_updater
+from deckysense.version import read_version
 
 
 class Plugin:
@@ -30,7 +31,7 @@ class Plugin:
     async def _main(self) -> None:
         self.loop = asyncio.get_event_loop()
         decky.logger.info(
-            "DeckySense backend started (v%s)", self_updater.CURRENT_VERSION
+            "DeckySense backend started (v%s)", read_version()
         )
         # Discover what settings API the running Decky Loader exposes.
         # Across versions the names have moved around; this log helps
@@ -60,7 +61,7 @@ class Plugin:
     # --- RPC: updater ----------------------------------------------------
 
     async def get_current_version(self) -> str:
-        return self_updater.CURRENT_VERSION
+        return read_version()
 
     async def check_for_update(self, force: bool = False) -> dict[str, Any]:
         return await self.loop.run_in_executor(None, self_updater.check, force)
@@ -144,7 +145,7 @@ class Plugin:
         backend_info = svc.get_backend_info()
         params = svc.get_params()
         backends = svc.list_backends()
-        version = self_updater.CURRENT_VERSION
+        version = read_version()
 
         # Scan /dev/input/event* for FF-capable devices
         devices: list[dict[str, Any]] = []

@@ -8,6 +8,62 @@ code like this" — every non-trivial decision should be findable here.
 
 ---
 
+## 2026-10-08 — v0.0.44: updater v2 (Panel de Control port) + project resumed
+
+**Context.** DeckySense is resumed after a ~2.5-month pause. Before any
+feature work, the update pipeline gets the robustness lessons from
+Panel de Control (full research: `docs/INVESTIGACION-2026-10.md` and
+`docs/PLAN-v2.md`). The old updater worked but had accumulated
+hard-won fixes (root-owned files, staging swaps, manual releases).
+
+**Backend.**
+
+- `py_modules/deckysense/version.py` — `read_version()` (lru_cached,
+  reads package.json; `cache_clear()` after installs so the fresh
+  version is visible without a restart).
+- `py_modules/deckysense/http_util.py` — shared `ssl_context()` that
+  loads the system CA bundle (Decky's bundled Python can ship without a
+  trust store → CERTIFICATE_VERIFY_FAILED).
+- `py_modules/deckysense/updater/self_updater.py` — rewritten on the
+  Panel de Control pattern: `_operation_lock` (RLock) serialises
+  check/install; session cache; **multi-version release notes** (paginates
+  `/releases` and aggregates everything the user missed, newest first);
+  `_extract_zip` restores the unix permission bits recorded in the zip
+  (plain extractall() drops them); install copies item-by-item OVER the
+  installed dir (never replaces it — imports and sys.path stay intact;
+  settings live outside the dir and are untouched); stable error contract
+  `{ok, needs_restart, message}` and `error: network|no_asset|bad_zip|install_failed`
+  — never raises; `restart_loader` keeps the LD_LIBRARY_PATH sanitisation
+  and adds `start_new_session`.
+- `main.py` — RPCs updated: `get_current_version` reads `read_version()`;
+  `restart_loader` is fire-and-forget.
+
+**Frontend.**
+
+- `src/updater/useUpdate.ts` — module-level shared store (the QAM panel,
+  the modal and the tab badge live in separate React trees; one store,
+  many subscribers), session guards (`sessionChecked` / `sessionToasted`
+  → one GitHub check and one toast per plugin process), phases
+  idle/checking/available/up_to_date/installing/done/error.
+- `src/updater/UpdatePanel.tsx` — one status line (version · state) +
+  one contextual button; opens the modal for notes/install.
+- `src/updater/UpdateModal.tsx` — aggregated notes (scrollable,
+  focusable) → Install → "restart Decky" step.
+- `src/api.ts` — updater types updated (`UpdateInfo`, `InstallResult`).
+
+**Validation.**
+
+- `check()` and `install()` exercised end-to-end against the real GitHub
+  release in a `/tmp` sandbox (download → extract → copy → version
+  refresh) before publishing.
+- `pnpm run build` clean; `python3 -m py_compile` clean.
+
+**Next.** Haptic Studio v2 (motor panel: firmware-level guide, cap
+slider if the EVIOCSGAIN test passes, FF toggle, preview) per
+`docs/PLAN-v2.md`.
+
+---
+
 ## 2026-07-20 — v0.0.43: focus ring, UinputProxy fix, debug dump, FF_GAIN test
 
 **Focus ring.** Steam stamps ``gpfocus`` on the focused ``Focusable``,

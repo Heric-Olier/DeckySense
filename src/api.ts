@@ -1,34 +1,27 @@
 import { callable } from "@decky/api";
 
-export type UpdateState =
-  | "idle"
-  | "checking"
-  | "available"
-  | "up_to_date"
-  | "installing"
-  | "done"
-  | "error"
-  | "restarting";
+// --- Updater ---
 
-export interface UpdateStatus {
-  state: UpdateState;
-  current_version: string;
-  latest_version?: string | null;
-  release_notes?: string | null;
-  asset_url?: string | null;
-  error?: string | null;
+export interface UpdateInfo {
+  current: string;
+  latest: string;
+  notes: string;
+  download_url: string;
+  has_update: boolean;
+  error: string;
 }
 
-export interface RestartResult {
-  state: string;
-  error?: string;
+export interface InstallResult {
+  ok: boolean;
+  needs_restart: boolean;
+  message: string;
 }
 
-export const checkForUpdate = callable<[force: boolean], UpdateStatus>(
+export const checkForUpdate = callable<[force: boolean], UpdateInfo>(
   "check_for_update"
 );
-export const installUpdate = callable<[], UpdateStatus>("install_update");
-export const restartLoader = callable<[], RestartResult>("restart_loader");
+export const installUpdate = callable<[], InstallResult>("install_update");
+export const restartLoader = callable<[], void>("restart_loader");
 export const getCurrentVersion = callable<[], string>("get_current_version");
 
 // --- Haptic ---
